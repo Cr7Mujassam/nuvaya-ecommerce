@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus, Trash2, Upload, Package, ShoppingBag, Settings,
-  LayoutDashboard, LogOut, Sparkles, AlertTriangle, CheckCircle2, ExternalLink
+  LayoutDashboard, LogOut, Sparkles, AlertTriangle, CheckCircle2, ExternalLink, Pencil, X
 } from 'lucide-react';
 import axiosClient, { FALLBACK_IMAGE, resolveAssetUrl } from '../../api/axiosClient';
 
@@ -36,11 +36,13 @@ export default function AdminDashboardPage() {
   const [settings, setSettings] = useState(null);
   const [tab, setTab] = useState('overview');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingProductId, setEditingProductId] = useState(null);
   const [form, setForm] = useState(emptyProductForm);
   const [newImageUrl, setNewImageUrl] = useState('');
   const [newImageColor, setNewImageColor] = useState('');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const formRef = useRef(null);
   const navigate = useNavigate();
 
   const loadAll = async () => {
@@ -66,6 +68,73 @@ export default function AdminDashboardPage() {
   };
 
   useEffect(() => { loadAll(); }, []);
+
+  const resetForm = () => {
+    setEditingProductId(null);
+    setForm({ ...emptyProductForm, categoryId: categories[0]?.id || '' });
+    setNewImageUrl('');
+    setNewImageColor('');
+  };
+
+  const openNewProductForm = () => {
+    resetForm();
+    setTab('products');
+    setShowAddForm(true);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  };
+
+  const handleEditProduct = (product) => {
+    const matchedCat =
+      categories.find((c) => c.id === product.categoryId || c.name === product.categoryName)?.id ||
+      categories[0]?.id ||
+      '';
+
+    setEditingProductId(product.id);
+    setForm({
+      name: product.name || '',
+      sku: product.sku || '',
+      categoryId: matchedCat,
+      fabric: product.fabric || '',
+      description: product.description || '',
+      specifications: product.specifications || '',
+      availableSizesText: (product.availableSizes && product.availableSizes.length > 0)
+        ? product.availableSizes.join(', ')
+        : 'Standard',
+      basePrice: product.basePrice ?? '',
+      discountPrice: product.discountPrice ?? '',
+      stockQuantity: product.stockQuantity ?? 50,
+      status: product.status || 'ACTIVE',
+      featured: Boolean(product.featured),
+      newArrival: Boolean(product.newArrival),
+      bestSeller: Boolean(product.bestSeller),
+      deliveryChargeType: product.deliveryChargeType || 'FREE',
+      deliveryChargeAmount: product.deliveryChargeAmount ?? 0,
+      colors: product.colors?.length
+        ? product.colors.map((c) => ({ name: c.name, hexCode: c.hexCode || '#191817', inStock: c.inStock ?? true }))
+        : [{ name: 'Black', hexCode: '#191817', inStock: true }],
+      images: product.images?.length
+        ? product.images.map((im, idx) => ({
+            imageUrl: im.imageUrl,
+            colorName: im.colorName || '',
+            primaryImage: Boolean(im.primaryImage ?? idx === 0),
+          }))
+        : [],
+      packs: product.packs?.length
+        ? product.packs.map((pk) => ({
+            packName: pk.packName || 'Pack of 3',
+            pieceCount: pk.pieceCount || 3,
+            packPrice: pk.packPrice ?? '',
+            discountPrice: pk.discountPrice ?? '',
+            packDeliveryCharge: pk.packDeliveryCharge ?? 0,
+            allowMixedColors: Boolean(pk.allowMixedColors),
+            stockQuantity: pk.stockQuantity ?? 50,
+          }))
+        : [],
+    });
+    setTab('products');
+    setShowAddForm(true);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  };
 
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files || []);
@@ -95,13 +164,12 @@ export default function AdminDashboardPage() {
           uploadedUrl = data.imageUrl;
         }
         if (uploadedUrl) {
-          const data = { imageUrl: uploadedUrl };
           setForm((prev) => ({
             ...prev,
             images: [
               ...prev.images,
               {
-                imageUrl: data.imageUrl,
+                imageUrl: uploadedUrl,
                 colorName: newImageColor || prev.colors[0]?.name || '',
                 primaryImage: prev.images.length === 0,
               },
@@ -133,7 +201,7 @@ export default function AdminDashboardPage() {
     setNewImageUrl('');
   };
 
-  const handleCreateProduct = async (e) => {
+  const handleSaveProduct = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
@@ -155,7 +223,10 @@ export default function AdminDashboardPage() {
         deliveryChargeType: form.deliveryChargeType,
         deliveryChargeAmount: Number(form.deliveryChargeAmount || 0),
         colors: form.colors.filter((c) => c.name.trim()),
-        images: form.images,
+        images: form.images.map((im, idx) => ({
+          ...im,
+          primaryImage: idx === 0 ? true : Boolean(im.primaryImage),
+        })),
         packs: form.packs.map((pk) => ({
           packName: pk.packName,
           pieceCount: Number(pk.pieceCount),
@@ -167,8 +238,13 @@ export default function AdminDashboardPage() {
         })),
       };
 
-      await axiosClient.post('/admin/products', payload);
-      setForm({ ...emptyProductForm, categoryId: categories[0]?.id || '' });
+      if (editingProductId) {
+        await axiosClient.put(`/admin/products/${editingProductId}`, payload);
+      } else {
+        await axiosClient.post('/admin/products', payload);
+      }
+
+      resetForm();
       setShowAddForm(false);
       await loadAll();
     } catch (err) {
@@ -180,6 +256,10 @@ export default function AdminDashboardPage() {
 
   const handleDeleteProduct = async (id, name) => {
     if (!window.confirm(`Delete "${name}" from NuVaya catalog?`)) return;
+    if (editingProductId === id) {
+      resetForm();
+      setShowAddForm(false);
+    }
     await axiosClient.delete(`/admin/products/${id}`);
     loadAll();
   };
@@ -229,7 +309,7 @@ export default function AdminDashboardPage() {
             <a href="/" target="_blank" rel="noreferrer" style={goldGhostBtn}>
               <ExternalLink size={15} /> Live Store
             </a>
-            <button onClick={() => { setTab('products'); setShowAddForm(true); }} style={goldSolidBtn}>
+            <button onClick={openNewProductForm} style={goldSolidBtn}>
               <Plus size={16} /> Add Product
             </button>
             <button onClick={logout} style={goldGhostBtn}>
@@ -301,17 +381,49 @@ export default function AdminDashboardPage() {
         )}
 
         {tab === 'products' && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <div ref={formRef}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
               <h2 style={{ fontSize: '1.8rem', color: 'var(--brand-plum)' }}>NuVaya Product Catalog</h2>
-              <button onClick={() => setShowAddForm(!showAddForm)} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <Plus size={18} /> {showAddForm ? 'Close Form' : 'Add New Product'}
-              </button>
+              {showAddForm ? (
+                <button
+                  onClick={() => { resetForm(); setShowAddForm(false); }}
+                  className="btn-outline"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                >
+                  <X size={16} /> Close Form
+                </button>
+              ) : (
+                <button
+                  onClick={openNewProductForm}
+                  className="btn-primary"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                >
+                  <Plus size={18} /> Add New Product
+                </button>
+              )}
             </div>
 
             {showAddForm && (
-              <form onSubmit={handleCreateProduct} style={{ background: '#fff', padding: 28, borderRadius: 16, border: '1px solid var(--brand-gold)', marginBottom: 28, display: 'grid', gap: 18, boxShadow: '0 10px 30px rgba(44,20,31,0.08)' }}>
-                <h3 style={{ fontSize: '1.6rem', color: 'var(--brand-plum)' }}>Add New NuVaya Product</h3>
+              <form onSubmit={handleSaveProduct} style={{ background: '#fff', padding: 28, borderRadius: 16, border: '1.5px solid var(--brand-gold)', marginBottom: 28, display: 'grid', gap: 18, boxShadow: '0 10px 30px rgba(44,20,31,0.08)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, borderBottom: '1px solid var(--border-sand)', paddingBottom: 12 }}>
+                  <div>
+                    <div style={{ fontSize: '0.7rem', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--brand-gold-dark)', fontWeight: 700 }}>
+                      {editingProductId ? `Editing Catalog Item #${editingProductId}` : 'New Catalog Entry'}
+                    </div>
+                    <h3 style={{ fontSize: '1.65rem', color: 'var(--brand-plum)' }}>
+                      {editingProductId ? `Edit "${form.name}"` : 'Add New NuVaya Product'}
+                    </h3>
+                  </div>
+                  {editingProductId && (
+                    <button
+                      type="button"
+                      onClick={() => { resetForm(); setShowAddForm(false); }}
+                      style={{ background: 'var(--bg-cream)', color: 'var(--brand-plum)', border: '1px solid var(--border-sand)', padding: '7px 14px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem' }}
+                    >
+                      Cancel Edit
+                    </button>
+                  )}
+                </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
                   <div>
@@ -334,7 +446,7 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12 }}>
                   <div>
                     <label style={lbl}>Base Price (₹) *</label>
                     <input required type="number" step="0.01" placeholder="399" value={form.basePrice} onChange={(e) => setForm({ ...form, basePrice: e.target.value })} style={inp} />
@@ -348,12 +460,20 @@ export default function AdminDashboardPage() {
                     <input required type="number" min="0" value={form.stockQuantity} onChange={(e) => setForm({ ...form, stockQuantity: e.target.value })} style={inp} />
                   </div>
                   <div>
+                    <label style={lbl}>Visibility Status</label>
+                    <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} style={inp}>
+                      <option value="ACTIVE">ACTIVE (Visible on Store)</option>
+                      <option value="DRAFT">DRAFT (Hidden)</option>
+                      <option value="ARCHIVED">ARCHIVED</option>
+                    </select>
+                  </div>
+                  <div>
                     <label style={lbl}>Sizes (comma-separated)</label>
                     <input placeholder="Standard or 52, 54, 56, 58" value={form.availableSizesText} onChange={(e) => setForm({ ...form, availableSizesText: e.target.value })} style={inp} />
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
                   <div>
                     <label style={lbl}>Description</label>
                     <textarea rows={2} placeholder="Soft drape, breathable all-season wear..." value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} style={inp} />
@@ -378,7 +498,7 @@ export default function AdminDashboardPage() {
                     <label style={lbl}>Delivery Fee (₹)</label>
                     <input type="number" value={form.deliveryChargeAmount} onChange={(e) => setForm({ ...form, deliveryChargeAmount: e.target.value })} style={inp} />
                   </div>
-                  <div style={{ display: 'flex', gap: 16, paddingTop: 18 }}>
+                  <div style={{ display: 'flex', gap: 16, paddingTop: 18, flexWrap: 'wrap' }}>
                     <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: '0.88rem' }}>
                       <input type="checkbox" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} /> Featured
                     </label>
@@ -441,9 +561,11 @@ export default function AdminDashboardPage() {
                             src={resolveAssetUrl(im.imageUrl)}
                             onError={(e) => { e.currentTarget.src = FALLBACK_IMAGE; }}
                             alt=""
-                            style={{ width: 88, height: 106, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--brand-gold)' }}
+                            style={{ width: 88, height: 106, objectFit: 'cover', borderRadius: 8, border: idx === 0 ? '2px solid var(--brand-plum)' : '1px solid var(--brand-gold)' }}
                           />
-                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>#{idx + 1} {im.colorName || ''}</div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                            {idx === 0 ? 'Cover' : `#${idx + 1}`} {im.colorName || ''}
+                          </div>
                           <button type="button" onClick={() => setForm({ ...form, images: form.images.filter((_, i) => i !== idx) })}
                             style={{ position: 'absolute', top: 4, right: 4, background: '#2C141F', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: '0.7rem' }}>
                             ×
@@ -483,17 +605,44 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                <button type="submit" disabled={saving} className="btn-primary" style={{ justifySelf: 'start', padding: '13px 32px' }}>
-                  {saving ? 'Publishing...' : 'Publish Product to NuVaya Store'}
-                </button>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  <button type="submit" disabled={saving} className="btn-primary" style={{ padding: '13px 32px' }}>
+                    {saving
+                      ? 'Saving...'
+                      : editingProductId
+                        ? 'Save Changes to NuVaya Store'
+                        : 'Publish Product to NuVaya Store'}
+                  </button>
+                  {editingProductId && (
+                    <button
+                      type="button"
+                      onClick={() => { resetForm(); setShowAddForm(false); }}
+                      className="btn-outline"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
               </form>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 18 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(295px, 1fr))', gap: 18 }}>
               {products.map((p) => {
                 const img = p.images?.find((i) => i.primaryImage) || p.images?.[0];
+                const isBeingEdited = editingProductId === p.id;
                 return (
-                  <div key={p.id} style={{ background: '#fff', borderRadius: 14, border: '1px solid var(--border-sand)', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 6px 18px rgba(44,20,31,0.04)' }}>
+                  <div
+                    key={p.id}
+                    style={{
+                      background: '#fff',
+                      borderRadius: 14,
+                      border: isBeingEdited ? '2px solid var(--brand-plum)' : '1px solid var(--border-sand)',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      boxShadow: '0 6px 18px rgba(44,20,31,0.04)'
+                    }}
+                  >
                     <div style={{ display: 'flex', gap: 14, padding: 14 }}>
                       <img
                         src={resolveAssetUrl(img?.imageUrl)}
@@ -513,13 +662,50 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
                     </div>
-                    <div style={{ padding: '10px 14px', background: 'var(--bg-cream)', borderTop: '1px solid var(--border-sand)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ padding: '10px 14px', background: 'var(--bg-cream)', borderTop: '1px solid var(--border-sand)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                       <span style={{ fontSize: '0.76rem', color: 'var(--brand-plum)', fontWeight: 600 }}>
                         {p.packs?.length ? `${p.packs.length} Bundle Options` : 'Single Item'}
                       </span>
-                      <button onClick={() => handleDeleteProduct(p.id, p.name)} style={{ background: '#FDECEA', color: '#9E2A2B', border: 'none', padding: '6px 12px', borderRadius: 8, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, fontWeight: 600, fontSize: '0.8rem' }}>
-                        <Trash2 size={14} /> Delete
-                      </button>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                          type="button"
+                          onClick={() => handleEditProduct(p)}
+                          style={{
+                            background: '#FFFFFF',
+                            color: 'var(--brand-plum)',
+                            border: '1px solid var(--brand-gold)',
+                            padding: '6px 12px',
+                            borderRadius: 8,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            fontWeight: 600,
+                            fontSize: '0.8rem'
+                          }}
+                        >
+                          <Pencil size={13} /> Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteProduct(p.id, p.name)}
+                          style={{
+                            background: '#FDECEA',
+                            color: '#9E2A2B',
+                            border: 'none',
+                            padding: '6px 12px',
+                            borderRadius: 8,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            fontWeight: 600,
+                            fontSize: '0.8rem'
+                          }}
+                        >
+                          <Trash2 size={14} /> Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
