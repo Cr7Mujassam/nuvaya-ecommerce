@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axiosClient, { resolveAssetUrl } from '../../api/axiosClient';
 import { useCart } from '../../context/CartContext';
+import ProductReviewsSection from '../../components/product/ProductReviewsSection';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -60,6 +61,7 @@ export default function ProductDetailPage() {
     : (product.discountPrice || product.basePrice);
 
   return (
+    <>
     <div style={{ maxWidth: 1160, margin: '40px auto', padding: '0 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 44 }}>
       <div>
         <div style={{ borderRadius: 16, overflow: 'hidden', background: 'var(--bg-cream)', border: '1px solid var(--border-sand)' }}>
@@ -233,5 +235,7 @@ export default function ProductDetailPage() {
         </div>
       </div>
     </div>
+      <ProductReviewsSection productId={product.id} />
+    </>
   );
 }

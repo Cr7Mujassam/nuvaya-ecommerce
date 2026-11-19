@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus, Trash2, Upload, Package, ShoppingBag, Settings,
-  LayoutDashboard, LogOut, Sparkles, AlertTriangle, CheckCircle2, ExternalLink, Pencil, X
+  LayoutDashboard, LogOut, Sparkles, AlertTriangle, CheckCircle2, ExternalLink, Pencil, X, Star, BadgeCheck, MessageSquareReply
 } from 'lucide-react';
 import axiosClient, { FALLBACK_IMAGE, resolveAssetUrl } from '../../api/axiosClient';
 
@@ -33,6 +33,9 @@ export default function AdminDashboardPage() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [reviewFilter, setReviewFilter] = useState('ALL');
+  const [replyDrafts, setReplyDrafts] = useState({});
   const [settings, setSettings] = useState(null);
   const [tab, setTab] = useState('overview');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -47,18 +50,20 @@ export default function AdminDashboardPage() {
 
   const loadAll = async () => {
     try {
-      const [dashRes, prodRes, catRes, ordRes, setRes] = await Promise.all([
+      const [dashRes, prodRes, catRes, ordRes, setRes, revRes] = await Promise.all([
         axiosClient.get('/admin/dashboard'),
         axiosClient.get('/admin/products?size=100'),
         axiosClient.get('/categories'),
         axiosClient.get('/admin/orders'),
         axiosClient.get('/store/settings'),
+        axiosClient.get('/admin/reviews?size=100').catch(() => ({ data: { content: [] } })),
       ]);
       setStats(dashRes.data);
       setProducts(prodRes.data.content || []);
       setCategories(catRes.data || []);
       setOrders(ordRes.data.content || []);
       setSettings(setRes.data);
+      setReviews(revRes.data?.content || []);
       if (catRes.data?.length && !form.categoryId) {
         setForm((prev) => ({ ...prev, categoryId: catRes.data[0].id }));
       }
@@ -275,6 +280,23 @@ export default function AdminDashboardPage() {
     alert('NuVaya store, social & contact settings saved!');
   };
 
+  const handleReviewStatus = async (id, status) => {
+    await axiosClient.put(`/admin/reviews/${id}/status`, { status });
+    loadAll();
+  };
+
+  const handleReviewReply = async (id) => {
+    const reply = replyDrafts[id] ?? '';
+    await axiosClient.put(`/admin/reviews/${id}/reply`, { reply });
+    loadAll();
+  };
+
+  const handleDeleteReview = async (id) => {
+    if (!window.confirm('Delete this customer review permanently?')) return;
+    await axiosClient.delete(`/admin/reviews/${id}`);
+    loadAll();
+  };
+
   const logout = () => {
     sessionStorage.removeItem('nuvaya_admin_jwt');
     navigate('/admin/login');
@@ -323,6 +345,7 @@ export default function AdminDashboardPage() {
             { id: 'overview', label: 'Overview', icon: LayoutDashboard },
             { id: 'products', label: `Catalog (${products.length})`, icon: Package },
             { id: 'orders', label: `WhatsApp Orders (${orders.length})`, icon: ShoppingBag },
+            { id: 'reviews', label: `Reviews (${reviews.length})`, icon: Star },
             { id: 'settings', label: 'Store, Social & Contact', icon: Settings },
           ].map(({ id, label, icon: Icon }) => {
             const active = tab === id;
@@ -746,6 +769,100 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {tab === 'reviews' && (
+          <div style={{ display: 'grid', gap: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+              <h2 style={{ fontSize: '1.8rem', color: 'var(--brand-plum)' }}>Customer Reviews &amp; Moderation</h2>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map((st) => (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => setReviewFilter(st)}
+                    style={{
+                      padding: '7px 14px',
+                      borderRadius: 8,
+                      border: '1px solid var(--brand-gold)',
+                      background: reviewFilter === st ? 'var(--brand-plum)' : '#fff',
+                      color: reviewFilter === st ? '#FAF6EE' : 'var(--brand-plum)',
+                      fontWeight: 600,
+                      fontSize: '0.8rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {st}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {reviews.filter((r) => reviewFilter === 'ALL' || r.status === reviewFilter).length === 0 ? (
+              <div style={{ background: '#fff', padding: 32, borderRadius: 14, border: '1px solid var(--border-sand)', color: 'var(--text-muted)' }}>
+                No reviews in this filter yet.
+              </div>
+            ) : reviews
+              .filter((r) => reviewFilter === 'ALL' || r.status === reviewFilter)
+              .map((rev) => (
+                <div key={rev.id} style={{ background: '#fff', padding: 20, borderRadius: 14, border: '1px solid var(--border-sand)', display: 'grid', gap: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <strong style={{ color: 'var(--brand-plum)', fontSize: '1rem' }}>{rev.customerName}</strong>
+                        <span style={{ color: '#C6A163', fontWeight: 700 }}>{'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}</span>
+                        {rev.verifiedPurchase && (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#E6F4EA', color: '#1E6F50', padding: '2px 8px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700 }}>
+                            <BadgeCheck size={13} /> Verified Purchase
+                          </span>
+                        )}
+                        <span style={statusPill(rev.status === 'APPROVED' ? 'CONFIRMED' : rev.status === 'REJECTED' ? 'CANCELLED' : 'PENDING')}>
+                          {rev.status}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--brand-gold-dark)', fontWeight: 600, marginTop: 2 }}>
+                        Product: {rev.productName} • {rev.createdAt ? new Date(rev.createdAt).toLocaleDateString('en-IN') : ''}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {rev.status !== 'APPROVED' && (
+                        <button type="button" onClick={() => handleReviewStatus(rev.id, 'APPROVED')} style={{ background: '#E6F4EA', color: '#1E6F50', border: '1px solid #A8DAB5', padding: '6px 12px', borderRadius: 8, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
+                          Approve
+                        </button>
+                      )}
+                      {rev.status !== 'REJECTED' && (
+                        <button type="button" onClick={() => handleReviewStatus(rev.id, 'REJECTED')} style={{ background: '#FDF3E1', color: '#9E7B43', border: '1px solid var(--brand-gold)', padding: '6px 12px', borderRadius: 8, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
+                          Reject
+                        </button>
+                      )}
+                      <button type="button" onClick={() => handleDeleteReview(rev.id)} style={{ background: '#FDECEA', color: '#9E2A2B', border: 'none', padding: '6px 12px', borderRadius: 8, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+
+                  <p style={{ fontSize: '0.92rem', color: 'var(--text-charcoal)' }}>{rev.comment}</p>
+
+                  {rev.imageUrl && (
+                    <img src={resolveAssetUrl(rev.imageUrl)} alt="Review" style={{ width: 76, height: 92, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--brand-gold)' }} />
+                  )}
+
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
+                    <MessageSquareReply size={16} color="var(--brand-gold-dark)" />
+                    <input
+                      placeholder="Write official NuVaya Atelier reply..."
+                      value={replyDrafts[rev.id] !== undefined ? replyDrafts[rev.id] : (rev.adminReply || '')}
+                      onChange={(e) => setReplyDrafts({ ...replyDrafts, [rev.id]: e.target.value })}
+                      style={inp}
+                    />
+                    <button type="button" onClick={() => handleReviewReply(rev.id)} className="btn-outline" style={{ padding: '9px 14px', whiteSpace: 'nowrap' }}>
+                      Save Reply
+                    </button>
+                  </div>
+                </div>
+              ))}
           </div>
         )}
 
