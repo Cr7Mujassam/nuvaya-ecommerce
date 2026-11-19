@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { ShoppingBag, Star } from 'lucide-react';
 import { FALLBACK_IMAGE, resolveAssetUrl } from '../../api/axiosClient';
 import { useCart } from '../../context/CartContext';
 
@@ -10,14 +10,12 @@ export default function ProductCard({ product }) {
   const [selectedColor, setSelectedColor] = useState(product.colors?.[0]?.name || '');
   const [selectedPack, setSelectedPack] = useState(null);
   const [activeImgIdx, setActiveImgIdx] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
-  const touchStartX = useRef(null);
+  const trackRef = useRef(null);
 
   const images = product.images || [];
   const baseUnitPrice = Number(product.discountPrice || product.basePrice);
   const baseRegularPrice = Number(product.basePrice);
 
-  // Build pack options: include Single (Pack of 1) + any configured packs (Pack of 3, 5, 6, etc.)
   const configuredPacks = product.packs || [];
   const hasPackOf1 = configuredPacks.some((pk) => Number(pk.pieceCount) === 1);
   const displayPacks = hasPackOf1
@@ -35,11 +33,25 @@ export default function ProductCard({ product }) {
         ...configuredPacks,
       ];
 
+  const scrollToPhoto = (idx, smooth = true) => {
+    const el = trackRef.current;
+    if (!el) return;
+    el.scrollTo({
+      left: idx * el.clientWidth,
+      behavior: smooth ? 'smooth' : 'auto',
+    });
+    setActiveImgIdx(idx);
+  };
+
   useEffect(() => {
     setSelectedPack(displayPacks[0] || null);
     setSelectedColor(product.colors?.[0]?.name || '');
     const primaryIdx = images.findIndex((i) => i.primaryImage);
-    setActiveImgIdx(primaryIdx >= 0 ? primaryIdx : 0);
+    const startIdx = primaryIdx >= 0 ? primaryIdx : 0;
+    setActiveImgIdx(startIdx);
+    if (trackRef.current) {
+      trackRef.current.scrollLeft = startIdx * trackRef.current.clientWidth;
+    }
   }, [product.id]);
 
   const handleColorPick = (e, colorName) => {
@@ -50,42 +62,18 @@ export default function ProductCard({ product }) {
       (i) => i.colorName?.toLowerCase() === colorName?.toLowerCase()
     );
     if (matchIdx >= 0) {
-      setActiveImgIdx(matchIdx);
+      scrollToPhoto(matchIdx, true);
     }
   };
 
-  const prevPhoto = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (images.length <= 1) return;
-    setActiveImgIdx((prev) => (prev - 1 + images.length) % images.length);
-  };
-
-  const nextPhoto = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (images.length <= 1) return;
-    setActiveImgIdx((prev) => (prev + 1) % images.length);
-  };
-
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = (e) => {
-    if (touchStartX.current === null || images.length <= 1) return;
-    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
-    touchStartX.current = null;
-    if (Math.abs(deltaX) > 35) {
-      if (deltaX < 0) {
-        setActiveImgIdx((prev) => (prev + 1) % images.length);
-      } else {
-        setActiveImgIdx((prev) => (prev - 1 + images.length) % images.length);
-      }
+  const handleTrackScroll = () => {
+    const el = trackRef.current;
+    if (!el || el.clientWidth === 0) return;
+    const idx = Math.round(el.scrollLeft / el.clientWidth);
+    if (idx !== activeImgIdx && idx >= 0 && idx < images.length) {
+      setActiveImgIdx(idx);
     }
   };
-
-  const currentImage = images[activeImgIdx] || images[0];
 
   const regularPrice = selectedPack
     ? Number(selectedPack.packPrice)
@@ -103,37 +91,52 @@ export default function ProductCard({ product }) {
   const reviewCount = Number(product.reviewCount || 0);
 
   return (
-    <div
-      className="nv-card"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {/* Portrait Image Frame with Direct Multi-Photo Arrows, Dots & Touch Swipe */}
+    <div className="nv-card">
+      {/* Clean Portrait Image Frame with Native Horizontal Scroll-Snap (No Arrows) */}
       <div
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
         style={{
           position: 'relative',
           aspectRatio: '3 / 4',
           background: 'var(--bg-cream)',
           overflow: 'hidden',
-          userSelect: 'none'
         }}
       >
-        <img
-          src={resolveAssetUrl(currentImage?.imageUrl)}
-          onError={(e) => { e.currentTarget.src = FALLBACK_IMAGE; }}
-          alt={product.name}
-          onClick={() => navigate(`/product/${product.id}`)}
-          className="nv-card-img"
+        <div
+          ref={trackRef}
+          onScroll={handleTrackScroll}
+          className="nv-photo-track"
           style={{
+            display: 'flex',
             width: '100%',
             height: '100%',
-            objectFit: 'cover',
-            cursor: 'pointer',
-            transition: 'transform 0.65s cubic-bezier(0.22, 1, 0.36, 1)'
+            overflowX: images.length > 1 ? 'auto' : 'hidden',
+            overflowY: 'hidden',
+            scrollSnapType: 'x mandatory',
+            scrollBehavior: 'smooth',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            WebkitOverflowScrolling: 'touch',
           }}
-        />
+        >
+          {(images.length > 0 ? images : [{ imageUrl: null }]).map((img, idx) => (
+            <img
+              key={img.id || idx}
+              src={resolveAssetUrl(img?.imageUrl)}
+              onError={(e) => { e.currentTarget.src = FALLBACK_IMAGE; }}
+              alt={`${product.name} ${idx + 1}`}
+              onClick={() => navigate(`/product/${product.id}`)}
+              className="nv-card-img"
+              style={{
+                flex: '0 0 100%',
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                scrollSnapAlign: 'start',
+                cursor: 'pointer',
+              }}
+            />
+          ))}
+        </div>
 
         {/* Top Left Badges */}
         <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: 5, pointerEvents: 'none' }}>
@@ -162,81 +165,53 @@ export default function ProductCard({ product }) {
           </div>
         )}
 
-        {/* Direct Multi-Photo Controls */}
+        {/* Minimal Bottom Photo Indicator Dots */}
         {images.length > 1 && (
-          <>
-            <button
-              type="button"
-              onClick={prevPhoto}
-              aria-label="Previous photo"
-              style={{
-                ...arrowBtnStyle,
-                left: 8,
-                opacity: isHovered ? 1 : 0.92
-              }}
-            >
-              <ChevronLeft size={17} />
-            </button>
-            <button
-              type="button"
-              onClick={nextPhoto}
-              aria-label="Next photo"
-              style={{
-                ...arrowBtnStyle,
-                right: 8,
-                opacity: isHovered ? 1 : 0.92
-              }}
-            >
-              <ChevronRight size={17} />
-            </button>
-
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 10,
-                left: 0,
-                right: 0,
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                gap: 6,
-                zIndex: 3
-              }}
-            >
-              {images.map((img, idx) => {
-                const active = idx === activeImgIdx;
-                return (
-                  <button
-                    key={img.id || idx}
-                    type="button"
-                    aria-label={`Photo ${idx + 1}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setActiveImgIdx(idx);
-                    }}
-                    style={{
-                      width: active ? 20 : 8,
-                      height: 8,
-                      padding: 0,
-                      border: 'none',
-                      borderRadius: 999,
-                      cursor: 'pointer',
-                      background: active ? '#27101B' : 'rgba(255,255,255,0.92)',
-                      boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
-                      transition: 'all 0.22s ease',
-                    }}
-                  />
-                );
-              })}
-            </div>
-          </>
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 10,
+              left: 0,
+              right: 0,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: 6,
+              zIndex: 3
+            }}
+          >
+            {images.map((img, idx) => {
+              const active = idx === activeImgIdx;
+              return (
+                <button
+                  key={img.id || idx}
+                  type="button"
+                  aria-label={`Photo ${idx + 1}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    scrollToPhoto(idx, true);
+                  }}
+                  style={{
+                    width: active ? 18 : 6,
+                    height: 6,
+                    padding: 0,
+                    border: 'none',
+                    borderRadius: 999,
+                    cursor: 'pointer',
+                    background: active ? '#27101B' : 'rgba(255,255,255,0.88)',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                    transition: 'all 0.22s ease',
+                  }}
+                />
+              );
+            })}
+          </div>
         )}
       </div>
 
       {/* Card Body */}
       <div style={{ padding: '16px 16px 18px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-        {/* Category + Live Star Rating Row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6 }}>
           <span style={{ fontSize: '0.66rem', color: 'var(--brand-gold-dark)', textTransform: 'uppercase', letterSpacing: '0.14em', fontWeight: 700 }}>
             {product.categoryName}
@@ -257,7 +232,6 @@ export default function ProductCard({ product }) {
           </Link>
         </div>
 
-        {/* Product Title */}
         <Link
           to={`/product/${product.id}`}
           className="editorial"
@@ -266,7 +240,7 @@ export default function ProductCard({ product }) {
           {product.name}
         </Link>
 
-        {/* Pack Selector Pills (Pack of 1, Pack of 3, Pack of 5, Pack of 6) */}
+        {/* Pack Selector Pills */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
           {displayPacks.map((pk, idx) => {
             const isSelected = selectedPack?.packName === pk.packName;
@@ -357,24 +331,6 @@ export default function ProductCard({ product }) {
     </div>
   );
 }
-
-const arrowBtnStyle = {
-  position: 'absolute',
-  top: '50%',
-  transform: 'translateY(-50%)',
-  width: 30,
-  height: 30,
-  borderRadius: '50%',
-  border: '1px solid rgba(198,161,99,0.75)',
-  background: 'rgba(251, 248, 243, 0.94)',
-  color: 'var(--brand-plum)',
-  display: 'grid',
-  placeItems: 'center',
-  cursor: 'pointer',
-  boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-  zIndex: 3,
-  padding: 0,
-};
 
 const badgeStyle = (bg) => ({
   background: bg,
