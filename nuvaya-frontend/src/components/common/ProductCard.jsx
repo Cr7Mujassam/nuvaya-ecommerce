@@ -10,6 +10,7 @@ export default function ProductCard({ product }) {
   const [selectedColor, setSelectedColor] = useState(product.colors?.[0]?.name || '');
   const [selectedPack, setSelectedPack] = useState(null);
   const [activeImgIdx, setActiveImgIdx] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
   const trackRef = useRef(null);
 
   const images = product.images || [];
@@ -54,6 +55,46 @@ export default function ProductCard({ product }) {
     }
   }, [product.id]);
 
+  // Laptop/Desktop Mouse Hover Photo Preview & Cycling
+  useEffect(() => {
+    if (!isHovered || images.length <= 1) return;
+
+    // Immediately show the next angle on mouse enter
+    const initialTimer = setTimeout(() => {
+      setActiveImgIdx((prev) => {
+        const next = (prev + 1) % images.length;
+        scrollToPhoto(next, true);
+        return next;
+      });
+    }, 220);
+
+    // Continue cycling if there are 3+ photos
+    const interval = setInterval(() => {
+      setActiveImgIdx((prev) => {
+        const next = (prev + 1) % images.length;
+        scrollToPhoto(next, true);
+        return next;
+      });
+    }, 1500);
+
+    return () => {
+      clearTimeout(initialTimer);
+      clearInterval(interval);
+    };
+  }, [isHovered, images.length]);
+
+  const handleMouseLeaveCard = () => {
+    setIsHovered(false);
+    if (images.length > 1) {
+      const matchIdx = selectedColor
+        ? images.findIndex((i) => i.colorName?.toLowerCase() === selectedColor.toLowerCase())
+        : -1;
+      const primaryIdx = images.findIndex((i) => i.primaryImage);
+      const resetIdx = matchIdx >= 0 ? matchIdx : (primaryIdx >= 0 ? primaryIdx : 0);
+      scrollToPhoto(resetIdx, true);
+    }
+  };
+
   const handleColorPick = (e, colorName) => {
     e.preventDefault();
     e.stopPropagation();
@@ -91,8 +132,12 @@ export default function ProductCard({ product }) {
   const reviewCount = Number(product.reviewCount || 0);
 
   return (
-    <div className="nv-card">
-      {/* Clean Portrait Image Frame with Native Horizontal Scroll-Snap (No Arrows) */}
+    <div
+      className="nv-card"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={handleMouseLeaveCard}
+    >
+      {/* Clean Portrait Image Frame: Hover Cycles on Laptop, Touch-Scrolls on Mobile/Tablet */}
       <div
         style={{
           position: 'relative',
