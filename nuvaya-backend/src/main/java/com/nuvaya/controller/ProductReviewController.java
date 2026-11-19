@@ -8,15 +8,18 @@ import com.nuvaya.service.storage.ImageStorageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.http.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class ProductReviewController {
+
     private final ProductReviewService reviewService;
     private final ImageStorageService storageService;
 
@@ -37,7 +40,7 @@ public class ProductReviewController {
     }
 
     @PostMapping("/products/reviews/upload-image")
-    public ResponseEntity> uploadReviewImage(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Object> uploadReviewImage(@RequestParam("file") MultipartFile file) {
         String url = storageService.store(file, "reviews");
         return ResponseEntity.ok(Map.of("imageUrl", url));
     }

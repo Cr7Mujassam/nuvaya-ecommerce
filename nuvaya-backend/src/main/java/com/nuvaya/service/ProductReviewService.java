@@ -87,7 +87,7 @@ public class ProductReviewService {
             String last10Input = normalizedMobile.length() >= 10 ? normalizedMobile.substring(normalizedMobile.length() - 10) : normalizedMobile;
             boolean mobileMatches = !last10Input.isEmpty() && orderPhone.endsWith(last10Input);
             boolean containsProduct = order.getItems().stream()
-                    .anyMatch(it -> Objects.equals(it.getProduct().getId(), productId));
+                    .anyMatch(it -> Objects.equals(it.getProductId(), productId));
 
             if (!mobileMatches || !containsProduct) {
                 throw new BusinessValidationException("Order Reference and Mobile Number do not match a purchase of this item.");
