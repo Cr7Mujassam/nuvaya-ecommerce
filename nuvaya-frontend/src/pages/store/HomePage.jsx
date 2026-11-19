@@ -10,7 +10,22 @@ export default function HomePage() {
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    axiosClient.get('/products/featured').then((r) => setFeatured(r.data)).catch(() => {});
+    Promise.all([
+      axiosClient.get('/products?sortBy=newest&size=12').catch(() => ({ data: { content: [] } })),
+      axiosClient.get('/products/featured').catch(() => ({ data: [] })),
+    ]).then(([newestRes, featRes]) => {
+      const newest = newestRes.data?.content || [];
+      const feat = featRes.data || [];
+      const seen = new Set();
+      const merged = [];
+      for (const item of [...newest, ...feat]) {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          merged.push(item);
+        }
+      }
+      setFeatured(merged.slice(0, 12));
+    });
     axiosClient.get('/products/bestsellers').then((r) => setBestsellers(r.data)).catch(() => {});
     axiosClient.get('/categories').then((r) => setCategories(r.data)).catch(() => {});
   }, []);
