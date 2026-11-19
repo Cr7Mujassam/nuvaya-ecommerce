@@ -60,4 +60,6 @@ public class ProductResponse {
         private boolean allowMixedColors;
         private Integer stockQuantity;
     }
+    private Double averageRating;
+    private Long reviewCount;
 }
