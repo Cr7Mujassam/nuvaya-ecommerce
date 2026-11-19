@@ -1,13 +1,26 @@
 package com.nuvaya.mapper;
 
+import com.nuvaya.entity.ProductReview;
+import com.nuvaya.entity.enums.ReviewStatus;
+import com.nuvaya.repository.ProductReviewRepository;
+import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import com.nuvaya.dto.response.ProductResponse;
 import com.nuvaya.entity.Product;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class ProductMapper {
+    private final ProductReviewRepository reviewRepository;
     public ProductResponse toResponse(Product p) {
+        List<ProductReview> approved = reviewRepository.findByProductIdAndStatus(p.getId(), ReviewStatus.APPROVED);
+        long reviewCount = approved.size();
+        double avgRating = reviewCount == 0 ? 0.0 : Math.round(approved.stream().mapToInt(ProductReview::getRating).average().orElse(0.0) * 10.0) / 10.0;
         return ProductResponse.builder()
+                .averageRating(avgRating)
+                .reviewCount(reviewCount)
                 .id(p.getId())
                 .name(p.getName())
                 .slug(p.getSlug())
