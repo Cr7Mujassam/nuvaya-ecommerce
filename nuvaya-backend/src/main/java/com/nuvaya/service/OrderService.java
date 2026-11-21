@@ -2,6 +2,7 @@ package com.nuvaya.service;
 
 import com.nuvaya.dto.request.OrderRequest;
 import com.nuvaya.dto.response.OrderResponse;
+import com.nuvaya.dto.response.OrderTrackingResponse;
 import com.nuvaya.entity.*;
 import com.nuvaya.entity.enums.*;
 import com.nuvaya.exception.*;
@@ -128,10 +129,26 @@ public class OrderService {
     }
 
     @Transactional
-    public OrderResponse updateOrderStatus(Long id, OrderStatus status) {
+    public OrderResponse updateOrderStatus(Long id, OrderStatus status, String trackingId, String courierPartner) {
         Order o = orderRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
-        o.setStatus(status);
+        if (status != null) {
+            o.setStatus(status);
+        }
+        if (trackingId != null) {
+            o.setTrackingId(trackingId.trim().isEmpty() ? null : trackingId.trim());
+        }
+        if (courierPartner != null) {
+            o.setCourierPartner(courierPartner.trim().isEmpty() ? null : courierPartner.trim());
+        }
         return orderMapper.toResponse(orderRepository.save(o));
+    }
+
+    @Transactional(readOnly = true)
+    public OrderTrackingResponse trackOrder(String orderReference) {
+        String cleanRef = orderReference == null ? "" : orderReference.trim();
+        Order o = orderRepository.findByOrderReferenceIgnoreCase(cleanRef)
+                .orElseThrow(() -> new ResourceNotFoundException("No order found with reference: " + cleanRef));
+        return orderMapper.toTrackingResponse(o);
     }
 
     @Transactional(readOnly = true)

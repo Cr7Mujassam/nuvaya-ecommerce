@@ -125,6 +125,7 @@ export default function Navbar() {
           <Link to="/shop?category=abayas">Abayas</Link>
           <Link to="/shop?category=new-arrivals">New Arrivals</Link>
           <Link to="/shop?category=best-sellers">Bundles</Link>
+          <Link to="/track-order">Track Order</Link>
         </nav>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -207,6 +208,7 @@ export default function Navbar() {
           <Link to="/shop?category=abayas" onClick={() => setMobileMenu(false)}>Abayas</Link>
           <Link to="/shop?category=new-arrivals" onClick={() => setMobileMenu(false)}>New Arrivals</Link>
           <Link to="/shop?category=best-sellers" onClick={() => setMobileMenu(false)}>Bundles (Pack of 3 & 5)</Link>
+          <Link to="/track-order" onClick={() => setMobileMenu(false)}>Track Order</Link>
           <Link to="/wishlist" onClick={() => setMobileMenu(false)}>My Wishlist ({wishlistCount})</Link>
         </div>
       )}

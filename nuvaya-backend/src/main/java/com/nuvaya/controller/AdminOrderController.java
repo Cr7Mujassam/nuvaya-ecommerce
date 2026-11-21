@@ -30,7 +30,10 @@ public class AdminOrderController {
 
     @PutMapping("/orders/{id}/status")
     public ResponseEntity<OrderResponse> updateStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(orderService.updateOrderStatus(id, OrderStatus.valueOf(body.get("status").toUpperCase())));
+        OrderStatus st = body.get("status") != null && !body.get("status").isBlank()
+                ? OrderStatus.valueOf(body.get("status").toUpperCase()) : null;
+        return ResponseEntity.ok(orderService.updateOrderStatus(
+                id, st, body.get("trackingId"), body.get("courierPartner")));
     }
 
     @PutMapping("/store/settings")

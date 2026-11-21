@@ -36,6 +36,7 @@ export default function AdminDashboardPage() {
   const [reviews, setReviews] = useState([]);
   const [reviewFilter, setReviewFilter] = useState('ALL');
   const [replyDrafts, setReplyDrafts] = useState({});
+  const [trackingDrafts, setTrackingDrafts] = useState({});
   const [settings, setSettings] = useState(null);
   const [tab, setTab] = useState('overview');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -319,8 +320,12 @@ export default function AdminDashboardPage() {
     loadAll();
   };
 
-  const updateOrderStatus = async (id, status) => {
-    await axiosClient.put(`/admin/orders/${id}/status`, { status });
+  const updateOrderStatus = async (id, status, trackingId, courierPartner) => {
+    await axiosClient.put(`/admin/orders/${id}/status`, {
+      status,
+      ...(trackingId !== undefined ? { trackingId } : {}),
+      ...(courierPartner !== undefined ? { courierPartner } : {}),
+    });
     loadAll();
   };
 
@@ -832,13 +837,57 @@ export default function AdminDashboardPage() {
                     ))}
                   </div>
                 </div>
-                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 10, minWidth: 250 }}>
                   <div style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--brand-plum)' }}>₹{Number(o.finalAmount).toLocaleString('en-IN')}</div>
                   <select value={o.status} onChange={(e) => updateOrderStatus(o.id, e.target.value)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--brand-gold)', fontWeight: 600 }}>
                     {['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map((st) => (
                       <option key={st} value={st}>{st}</option>
                     ))}
                   </select>
+                  <div style={{ background: 'var(--bg-cream)', padding: 10, borderRadius: 10, border: '1px solid var(--border-sand)', display: 'grid', gap: 6, textAlign: 'left' }}>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--brand-gold-dark)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                      NimbusPost Shipment Tracking
+                    </span>
+                    <input
+                      placeholder="NimbusPost AWB / Tracking ID"
+                      value={trackingDrafts[o.id]?.trackingId !== undefined ? trackingDrafts[o.id].trackingId : (o.trackingId || '')}
+                      onChange={(e) => setTrackingDrafts((prev) => ({
+                        ...prev,
+                        [o.id]: {
+                          trackingId: e.target.value,
+                          courierPartner: prev[o.id]?.courierPartner !== undefined ? prev[o.id].courierPartner : (o.courierPartner || ''),
+                        },
+                      }))}
+                      style={{ padding: '7px 10px', borderRadius: 7, border: '1px solid var(--border-sand)', fontSize: '0.8rem' }}
+                    />
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <input
+                        placeholder="Courier (e.g. Delhivery)"
+                        value={trackingDrafts[o.id]?.courierPartner !== undefined ? trackingDrafts[o.id].courierPartner : (o.courierPartner || '')}
+                        onChange={(e) => setTrackingDrafts((prev) => ({
+                          ...prev,
+                          [o.id]: {
+                            trackingId: prev[o.id]?.trackingId !== undefined ? prev[o.id].trackingId : (o.trackingId || ''),
+                            courierPartner: e.target.value,
+                          },
+                        }))}
+                        style={{ padding: '7px 10px', borderRadius: 7, border: '1px solid var(--border-sand)', fontSize: '0.8rem', flex: 1, minWidth: 0 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const draft = trackingDrafts[o.id] || {};
+                          const tid = draft.trackingId !== undefined ? draft.trackingId : (o.trackingId || '');
+                          const cp = draft.courierPartner !== undefined ? draft.courierPartner : (o.courierPartner || '');
+                          await updateOrderStatus(o.id, o.status, tid, cp);
+                          alert(`Tracking details saved for ${o.orderReference}`);
+                        }}
+                        style={{ padding: '7px 12px', borderRadius: 7, border: 'none', background: 'var(--brand-plum)', color: '#FAF6EE', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      >
+                        Save AWB
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}

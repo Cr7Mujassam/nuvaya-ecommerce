@@ -29,6 +29,10 @@ public class Order {
     private String pinCode;
     @Column(length = 500)
     private String orderNotes;
+    @Column(length = 80)
+    private String trackingId;
+    @Column(length = 80)
+    private String courierPartner;
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal;
     @Column(nullable = false, precision = 10, scale = 2)

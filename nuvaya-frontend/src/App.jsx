@@ -12,6 +12,7 @@ import ProductDetailPage from './pages/store/ProductDetailPage';
 import CheckoutPage from './pages/store/CheckoutPage';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import TrackOrderPage from './pages/store/TrackOrderPage';
 
 function OrderSubmittedPage() {
   const [params] = useSearchParams();
@@ -22,7 +23,7 @@ function OrderSubmittedPage() {
       <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', marginBottom: 24 }}>
         Complete sending your prefilled message in WhatsApp. Please note that sending the WhatsApp message initiates order review with the NuVaya team and does not by itself constitute payment confirmation or a confirmed order.
       </p>
-      <Link to="/shop" className="btn-primary">Continue Shopping</Link>
+      <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}><Link to={`/track-order?ref=${encodeURIComponent(params.get("ref") || "")}`} className="btn-outline">Track Order Status</Link><Link to="/shop" className="btn-primary">Continue Shopping</Link></div>
     </div>
   );
 }
@@ -42,6 +43,7 @@ export default function App() {
             <Route path="/product/:id" element={<ProductDetailPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/order-submitted" element={<OrderSubmittedPage />} />
+            <Route path="/track-order" element={<TrackOrderPage />} />
             <Route path="/admin/login" element={<AdminLoginPage />} />
             <Route path="/admin" element={<AdminDashboardPage />} />
           </Routes>
