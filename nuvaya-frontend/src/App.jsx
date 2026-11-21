@@ -16,14 +16,27 @@ import TrackOrderPage from './pages/store/TrackOrderPage';
 
 function OrderSubmittedPage() {
   const [params] = useSearchParams();
+  const method = params.get('method') || 'WHATSAPP';
+  const paid = params.get('paid') === '1';
   return (
-    <div style={{ maxWidth: 560, margin: '80px auto', padding: 32, background: '#fff', borderRadius: 16, border: '1px solid var(--brand-gold)', textAlign: 'center' }}>
-      <h1 style={{ fontSize: '2.2rem', marginBottom: 10, color: 'var(--brand-plum)' }}>Order Reference Created</h1>
-      <p style={{ fontWeight: 700, color: 'var(--brand-gold-dark)', marginBottom: 12 }}>Reference: {params.get('ref')}</p>
-      <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', marginBottom: 24 }}>
-        Complete sending your prefilled message in WhatsApp. Please note that sending the WhatsApp message initiates order review with the NuVaya team and does not by itself constitute payment confirmation or a confirmed order.
+    <div style={{ maxWidth: 580, margin: '80px auto', padding: 34, background: '#fff', borderRadius: 18, border: '1.5px solid var(--brand-gold)', textAlign: 'center', boxShadow: '0 18px 40px rgba(39,16,27,0.08)' }}>
+      <h1 style={{ fontSize: '2.2rem', marginBottom: 10, color: 'var(--brand-plum)' }}>
+        {paid ? 'Payment Received & Order Confirmed' : method === 'COD' ? 'COD Order Placed' : 'Order Reference Created'}
+      </h1>
+      <p style={{ fontWeight: 700, color: 'var(--brand-gold-dark)', marginBottom: 12, fontSize: '1.05rem' }}>
+        Order ID: {params.get('ref')}
       </p>
-      <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}><Link to={`/track-order?ref=${encodeURIComponent(params.get("ref") || "")}`} className="btn-outline">Track Order Status</Link><Link to="/shop" className="btn-primary">Continue Shopping</Link></div>
+      <p style={{ color: 'var(--text-muted)', fontSize: '0.93rem', marginBottom: 24, lineHeight: 1.6 }}>
+        {paid
+          ? 'Thank you! Your online payment has been verified and your order is confirmed. You can track live dispatch and NimbusPost courier updates anytime using your Order ID.'
+          : method === 'COD'
+            ? 'Your Cash on Delivery order is placed! Our team will verify your delivery address shortly and update your NimbusPost tracking ID on the Track Order page.'
+            : 'Complete sending your prefilled message in WhatsApp. Please note that sending the WhatsApp message initiates order review with the NuVaya team and does not by itself constitute payment confirmation or a confirmed order.'}
+      </p>
+      <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+        <Link to={`/track-order?ref=${encodeURIComponent(params.get("ref") || "")}`} className="btn-primary">Track Order Status</Link>
+        <Link to="/shop" className="btn-outline">Continue Shopping</Link>
+      </div>
     </div>
   );
 }

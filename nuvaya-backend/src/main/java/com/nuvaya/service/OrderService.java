@@ -32,6 +32,15 @@ public class OrderService {
         BigDecimal totalDiscount = BigDecimal.ZERO;
         BigDecimal deliveryTotal = BigDecimal.ZERO;
 
+        PaymentMethod pm = request.getPaymentMethod() != null ? request.getPaymentMethod() : PaymentMethod.WHATSAPP;
+        if (pm == PaymentMethod.COD && !settings.isCodEnabled()) {
+            throw new BusinessValidationException("Cash on Delivery is currently disabled.");
+        }
+        if (pm == PaymentMethod.ONLINE && !settings.isOnlinePaymentEnabled()) {
+            throw new BusinessValidationException("Online payment is currently disabled.");
+        }
+        PaymentStatus initialPayStatus = (pm == PaymentMethod.COD) ? PaymentStatus.COD_PENDING : PaymentStatus.PENDING;
+
         Order order = Order.builder()
                 .orderReference(OrderReferenceGenerator.generate())
                 .customerName(request.getCustomerName().trim())
@@ -41,6 +50,8 @@ public class OrderService {
                 .state(request.getState().trim())
                 .pinCode(request.getPinCode().trim())
                 .orderNotes(request.getOrderNotes())
+                .paymentMethod(pm)
+                .paymentStatus(initialPayStatus)
                 .status(OrderStatus.PENDING)
                 .items(new ArrayList<>())
                 .build();
@@ -108,6 +119,9 @@ public class OrderService {
         if (settings.isFreeDeliveryThresholdEnabled() && net.compareTo(settings.getFreeDeliveryThreshold()) >= 0) {
             deliveryTotal = BigDecimal.ZERO;
         }
+        if (pm == PaymentMethod.COD && settings.getCodHandlingFee() != null && settings.getCodHandlingFee().compareTo(BigDecimal.ZERO) > 0) {
+            deliveryTotal = deliveryTotal.add(settings.getCodHandlingFee());
+        }
         order.setSubtotal(subtotal);
         order.setDiscountAmount(totalDiscount);
         order.setDeliveryCharges(deliveryTotal);
@@ -133,6 +147,9 @@ public class OrderService {
         Order o = orderRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
         if (status != null) {
             o.setStatus(status);
+            if (status == OrderStatus.DELIVERED && o.getPaymentMethod() == PaymentMethod.COD) {
+                o.setPaymentStatus(PaymentStatus.PAID);
+            }
         }
         if (trackingId != null) {
             o.setTrackingId(trackingId.trim().isEmpty() ? null : trackingId.trim());

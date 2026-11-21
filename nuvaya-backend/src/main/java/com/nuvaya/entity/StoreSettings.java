@@ -30,6 +30,14 @@ public class StoreSettings {
     @Column(nullable = false, precision = 10, scale = 2) @Builder.Default
     private BigDecimal freeDeliveryThreshold = new BigDecimal("1499.00");
 
+    // Payment & COD Configuration
+    @Column(nullable = false) @Builder.Default
+    private boolean codEnabled = true;
+    @Column(nullable = false, precision = 10, scale = 2) @Builder.Default
+    private BigDecimal codHandlingFee = BigDecimal.ZERO;
+    @Column(nullable = false) @Builder.Default
+    private boolean onlinePaymentEnabled = true;
+
     // Live Sale & Offer Campaign Fields
     @Column(nullable = false) @Builder.Default
     private boolean saleActive = false;

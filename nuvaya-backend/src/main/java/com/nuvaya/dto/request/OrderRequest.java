@@ -1,5 +1,6 @@
 package com.nuvaya.dto.request;
 
+import com.nuvaya.entity.enums.PaymentMethod;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Data;
@@ -16,6 +17,7 @@ public class OrderRequest {
     @NotBlank @Pattern(regexp = "^[1-9][0-9]{5}$", message = "Enter a valid 6-digit PIN code")
     private String pinCode;
     private String orderNotes;
+    private PaymentMethod paymentMethod = PaymentMethod.WHATSAPP;
     @NotEmpty @Valid private List<OrderItemRequest> items;
 
     @Data

@@ -1,6 +1,8 @@
 package com.nuvaya.entity;
 
 import com.nuvaya.entity.enums.OrderStatus;
+import com.nuvaya.entity.enums.PaymentMethod;
+import com.nuvaya.entity.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -33,6 +35,14 @@ public class Order {
     private String trackingId;
     @Column(length = 80)
     private String courierPartner;
+    @Enumerated(EnumType.STRING) @Column(length = 25) @Builder.Default
+    private PaymentMethod paymentMethod = PaymentMethod.WHATSAPP;
+    @Enumerated(EnumType.STRING) @Column(length = 25) @Builder.Default
+    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
+    @Column(length = 80)
+    private String razorpayOrderId;
+    @Column(length = 80)
+    private String razorpayPaymentId;
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal;
     @Column(nullable = false, precision = 10, scale = 2)

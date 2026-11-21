@@ -1,6 +1,8 @@
 package com.nuvaya.dto.response;
 
 import com.nuvaya.entity.enums.OrderStatus;
+import com.nuvaya.entity.enums.PaymentMethod;
+import com.nuvaya.entity.enums.PaymentStatus;
 import lombok.Builder;
 import lombok.Data;
 import java.math.BigDecimal;
@@ -20,6 +22,10 @@ public class OrderResponse {
     private String orderNotes;
     private String trackingId;
     private String courierPartner;
+    private PaymentMethod paymentMethod;
+    private PaymentStatus paymentStatus;
+    private String razorpayOrderId;
+    private String razorpayPaymentId;
     private BigDecimal subtotal;
     private BigDecimal deliveryCharges;
     private BigDecimal discountAmount;
