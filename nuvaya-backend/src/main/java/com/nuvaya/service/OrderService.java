@@ -24,6 +24,7 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final StoreSettingsService storeSettingsService;
     private final OrderMapper orderMapper;
+    private final OrderEmailService orderEmailService;
 
     @Transactional
     public OrderResponse createOrder(OrderRequest request) {
@@ -127,7 +128,11 @@ public class OrderService {
         order.setDeliveryCharges(deliveryTotal);
         order.setFinalAmount(net.add(deliveryTotal));
 
-        return orderMapper.toResponse(orderRepository.save(order));
+        Order savedOrder = orderRepository.save(order);
+        if (pm != PaymentMethod.ONLINE) {
+            orderEmailService.sendOrderAlert(savedOrder, "New " + pm + " Order Received");
+        }
+        return orderMapper.toResponse(savedOrder);
     }
 
     @Transactional(readOnly = true)
@@ -157,7 +162,11 @@ public class OrderService {
         if (courierPartner != null) {
             o.setCourierPartner(courierPartner.trim().isEmpty() ? null : courierPartner.trim());
         }
-        return orderMapper.toResponse(orderRepository.save(o));
+        Order updated = orderRepository.save(o);
+        if (status == OrderStatus.CONFIRMED) {
+            orderEmailService.sendOrderAlert(updated, "Order Confirmed in Admin Studio");
+        }
+        return orderMapper.toResponse(updated);
     }
 
     @Transactional(readOnly = true)

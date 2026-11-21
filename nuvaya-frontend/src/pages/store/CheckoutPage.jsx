@@ -19,12 +19,21 @@ function loadRazorpayScript() {
 export default function CheckoutPage() {
   const { items, subtotal, deliveryCharges, discounts, totalAmount, storeSettings, clearCart } = useCart();
   const navigate = useNavigate();
-  const codEnabled = storeSettings?.codEnabled !== false;
+
   const onlineEnabled = storeSettings?.onlinePaymentEnabled !== false;
+  const codEnabled = storeSettings?.codEnabled !== false;
   const codFee = Number(storeSettings?.codHandlingFee || 0);
 
   const [paymentMethod, setPaymentMethod] = useState(onlineEnabled ? 'ONLINE' : codEnabled ? 'COD' : 'WHATSAPP');
-  const [form, setForm] = useState({ customerName: '', customerMobile: '', deliveryAddress: '', city: '', state: '', pinCode: '', orderNotes: '' });
+  const [form, setForm] = useState({
+    customerName: '',
+    customerMobile: '',
+    deliveryAddress: '',
+    city: '',
+    state: '',
+    pinCode: '',
+    orderNotes: ''
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -52,7 +61,7 @@ export default function CheckoutPage() {
       if (paymentMethod === 'ONLINE') {
         const sdkLoaded = await loadRazorpayScript();
         if (!sdkLoaded) {
-          throw new Error('Unable to load Razorpay payment checkout. Please check your internet connection or use Cash on Delivery.');
+          throw new Error('Unable to load Razorpay payment checkout. Please check your connection or select Cash on Delivery.');
         }
 
         const { data: rzp } = await axiosClient.post(`/orders/${encodeURIComponent(order.orderReference)}/payment/razorpay/initiate`);
@@ -79,13 +88,13 @@ export default function CheckoutPage() {
               clearCart();
               navigate(`/order-submitted?ref=${order.orderReference}&method=ONLINE&paid=1`);
             } catch (verifyErr) {
-              setError(verifyErr.response?.data?.message || 'Payment verification failed. Contact support with Order ID ' + order.orderReference);
+              setError(verifyErr.response?.data?.message || `Payment verification failed. Contact support with Order ID ${order.orderReference}`);
             }
           },
           modal: {
             ondismiss: () => {
               setSubmitting(false);
-              setError(`Payment window closed. Your Order ID ${order.orderReference} is saved—click Pay Now to retry or switch to COD.`);
+              setError(`Payment popup closed. Your Order ID ${order.orderReference} is saved—click Pay Now to retry or switch to Cash on Delivery.`);
             },
           },
         };
@@ -144,20 +153,19 @@ export default function CheckoutPage() {
           <textarea rows={2} placeholder="Optional Order Notes" value={form.orderNotes} onChange={(e) => setForm({ ...form, orderNotes: e.target.value })} style={inp} />
         </div>
 
-        {/* Payment Method Selector */}
         <div style={{ marginTop: 22 }}>
           <div style={{ fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.14em', color: 'var(--brand-gold-dark)', textTransform: 'uppercase', marginBottom: 10 }}>
-            Select Payment Method
+            Choose Payment Option
           </div>
           <div style={{ display: 'grid', gap: 10 }}>
             {onlineEnabled && (
-              <label
+              <div
                 onClick={() => setPaymentMethod('ONLINE')}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '13px 16px',
+                  padding: '14px 16px',
                   borderRadius: 12,
                   border: paymentMethod === 'ONLINE' ? '2px solid var(--brand-plum)' : '1px solid var(--border-sand)',
                   background: paymentMethod === 'ONLINE' ? 'var(--bg-cream)' : '#fff',
@@ -168,22 +176,22 @@ export default function CheckoutPage() {
                   <input type="radio" name="paymentMethod" checked={paymentMethod === 'ONLINE'} onChange={() => setPaymentMethod('ONLINE')} />
                   <CreditCard size={20} color="var(--brand-plum)" />
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.94rem', color: 'var(--brand-plum)' }}>Pay Online (UPI, Cards, NetBanking)</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.94rem', color: 'var(--brand-plum)' }}>Pay Online (Razorpay — UPI / Cards / NetBanking)</div>
                     <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>Instant confirmation via GPay, PhonePe, Paytm, Visa/Mastercard</div>
                   </div>
                 </div>
                 <span style={{ fontSize: '0.68rem', fontWeight: 800, padding: '3px 8px', borderRadius: 999, background: '#E6F4EA', color: '#1E6F50' }}>INSTANT</span>
-              </label>
+              </div>
             )}
 
             {codEnabled && (
-              <label
+              <div
                 onClick={() => setPaymentMethod('COD')}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '13px 16px',
+                  padding: '14px 16px',
                   borderRadius: 12,
                   border: paymentMethod === 'COD' ? '2px solid var(--brand-plum)' : '1px solid var(--border-sand)',
                   background: paymentMethod === 'COD' ? 'var(--bg-cream)' : '#fff',
@@ -196,20 +204,20 @@ export default function CheckoutPage() {
                   <div>
                     <div style={{ fontWeight: 700, fontSize: '0.94rem', color: 'var(--brand-plum)' }}>Cash on Delivery (COD)</div>
                     <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-                      {codFee > 0 ? `Pay in cash upon delivery (+₹${codFee} COD handling fee)` : 'Pay in cash when your parcel arrives at your doorstep'}
+                      {codFee > 0 ? `Pay in cash on delivery (+₹${codFee} COD handling fee)` : 'Pay in cash when your parcel arrives at your doorstep'}
                     </div>
                   </div>
                 </div>
-              </label>
+              </div>
             )}
 
-            <label
+            <div
               onClick={() => setPaymentMethod('WHATSAPP')}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '13px 16px',
+                padding: '14px 16px',
                 borderRadius: 12,
                 border: paymentMethod === 'WHATSAPP' ? '2px solid #1E6F50' : '1px solid var(--border-sand)',
                 background: paymentMethod === 'WHATSAPP' ? '#F3FAF6' : '#fff',
@@ -220,11 +228,11 @@ export default function CheckoutPage() {
                 <input type="radio" name="paymentMethod" checked={paymentMethod === 'WHATSAPP'} onChange={() => setPaymentMethod('WHATSAPP')} />
                 <MessageCircle size={20} color="#1E6F50" />
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.94rem', color: '#1E6F50' }}>Order via WhatsApp Concierge</div>
-                  <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>Chat directly with our team to confirm &amp; pay</div>
+                  <div style={{ fontWeight: 700, fontSize: '0.94rem', color: '#1E6F50' }}>Pay &amp; Confirm via WhatsApp</div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>Checkout directly to WhatsApp to pay via UPI / chat with our team</div>
                 </div>
               </div>
-            </label>
+            </div>
           </div>
         </div>
 
@@ -251,10 +259,10 @@ export default function CheckoutPage() {
           {submitting
             ? 'Processing Order...'
             : paymentMethod === 'ONLINE'
-              ? `Pay ₹${finalPayable.toLocaleString('en-IN')} Securely Now`
+              ? `Pay ₹${finalPayable.toLocaleString('en-IN')} with Razorpay`
               : paymentMethod === 'COD'
-                ? `Place COD Order (₹${finalPayable.toLocaleString('en-IN')})`
-                : 'Send Order on WhatsApp'}
+                ? `Place Cash on Delivery Order (₹${finalPayable.toLocaleString('en-IN')})`
+                : 'Checkout to WhatsApp'}
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12, fontSize: '0.76rem', color: 'var(--text-muted)' }}>

@@ -33,6 +33,7 @@ import java.util.Map;
 public class RazorpayPaymentService {
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
+    private final OrderEmailService orderEmailService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${razorpay.key.id:}")
@@ -119,7 +120,9 @@ public class RazorpayPaymentService {
         if (order.getStatus() == OrderStatus.PENDING) {
             order.setStatus(OrderStatus.CONFIRMED);
         }
-        return orderMapper.toResponse(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        orderEmailService.sendOrderAlert(saved, "Online Payment Verified & Order Confirmed");
+        return orderMapper.toResponse(saved);
     }
 
     private String hmacSha256(String data, String secret) {
