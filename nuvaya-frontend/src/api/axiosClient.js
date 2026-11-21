@@ -18,7 +18,7 @@ axiosClient.interceptors.request.use((config) => {
 axiosClient.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401 && window.location.pathname.startsWith('/admin')) {
+    if ((err.response?.status === 401 || err.response?.status === 403) && window.location.pathname.startsWith('/admin') && !window.location.pathname.includes('/login')) {
       sessionStorage.removeItem('nuvaya_admin_jwt');
       window.location.href = '/admin/login';
     }
