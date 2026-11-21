@@ -121,20 +121,20 @@ export default function ProductDetailPage() {
     <>
     <div style={{ maxWidth: 1160, margin: '40px auto', padding: '0 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 44 }}>
       <div>
-        <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', background: 'var(--bg-cream)', border: '1px solid var(--border-sand)' }}>
+        <div style={{ position: 'relative', width: '100%', maxWidth: 480, aspectRatio: '4 / 5', borderRadius: 16, overflow: 'hidden', background: 'var(--bg-cream)', border: '1px solid var(--border-sand)' }}>
           <div
             ref={galleryRef}
             onScroll={handleGalleryScroll}
             className="no-scrollbar"
             style={{
               display: 'flex',
+              width: '100%',
+              height: '100%',
               overflowX: 'auto',
               scrollSnapType: 'x mandatory',
               scrollBehavior: 'smooth',
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'none',
-              aspectRatio: '4 / 5',
-              maxHeight: 580,
             }}
           >
             {(images.length ? images : [{ imageUrl: '' }]).map((img, idx) => (
@@ -143,11 +143,8 @@ export default function ProductDetailPage() {
                 style={{
                   flex: '0 0 100%',
                   width: '100%',
+                  height: '100%',
                   scrollSnapAlign: 'start',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: 'var(--bg-cream)',
                 }}
               >
                 <img
