@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Search, User, Menu, X, ChevronDown } from 'lucide-react';
+import { ShoppingBag, Search, User, Menu, X, ChevronDown, Heart } from 'lucide-react';
+import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
 
 const HIJAB_FABRICS = [
@@ -12,6 +13,7 @@ const HIJAB_FABRICS = [
 
 export default function Navbar() {
   const { items, storeSettings, setDrawerOpen } = useCart();
+  const { wishlistCount } = useWishlist();
   const [search, setSearch] = useState('');
   const [mobileMenu, setMobileMenu] = useState(false);
   const [hijabDropdown, setHijabDropdown] = useState(false);
@@ -135,6 +137,28 @@ export default function Navbar() {
               style={{ border: 'none', background: 'transparent', outline: 'none', paddingLeft: 8, fontSize: '0.82rem', color: 'var(--brand-plum)', width: 145 }}
             />
           </form>
+          <Link to="/wishlist" title="My Wishlist" aria-label="My Wishlist" style={{ position: 'relative', color: 'var(--brand-plum)', display: 'inline-flex', padding: 6 }}>
+            <Heart size={19} strokeWidth={1.8} fill={wishlistCount > 0 ? '#9E2A2B' : 'transparent'} color={wishlistCount > 0 ? '#9E2A2B' : 'var(--brand-plum)'} />
+            {wishlistCount > 0 && (
+              <span style={{
+                position: 'absolute',
+                top: 0,
+                right: -2,
+                background: '#9E2A2B',
+                color: '#FBF8F3',
+                border: '1px solid var(--brand-gold)',
+                borderRadius: '50%',
+                fontSize: '0.62rem',
+                width: 17,
+                height: 17,
+                display: 'grid',
+                placeItems: 'center',
+                fontWeight: 700
+              }}>
+                {wishlistCount}
+              </span>
+            )}
+          </Link>
           <Link to="/admin/login" title="Admin Atelier" style={{ color: 'var(--brand-plum)', display: 'inline-flex', padding: 6 }}>
             <User size={19} strokeWidth={1.8} />
           </Link>
@@ -183,6 +207,7 @@ export default function Navbar() {
           <Link to="/shop?category=abayas" onClick={() => setMobileMenu(false)}>Abayas</Link>
           <Link to="/shop?category=new-arrivals" onClick={() => setMobileMenu(false)}>New Arrivals</Link>
           <Link to="/shop?category=best-sellers" onClick={() => setMobileMenu(false)}>Bundles (Pack of 3 & 5)</Link>
+          <Link to="/wishlist" onClick={() => setMobileMenu(false)}>My Wishlist ({wishlistCount})</Link>
         </div>
       )}
     </header>

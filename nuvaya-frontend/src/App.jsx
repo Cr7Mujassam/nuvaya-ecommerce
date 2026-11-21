@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, useSearchParams, Link } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
+import { WishlistProvider } from './context/WishlistContext';
+import WishlistPage from './pages/store/WishlistPage';
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
 import CartDrawer from './components/cart/CartDrawer';
@@ -28,6 +30,7 @@ function OrderSubmittedPage() {
 export default function App() {
   return (
     <BrowserRouter>
+      <WishlistProvider>
       <CartProvider>
         <Navbar />
         <CartDrawer />
@@ -35,6 +38,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/shop" element={<ShopPage />} />
+            <Route path="/wishlist" element={<WishlistPage />} />
             <Route path="/product/:id" element={<ProductDetailPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/order-submitted" element={<OrderSubmittedPage />} />
@@ -44,6 +48,7 @@ export default function App() {
         </main>
         <Footer />
       </CartProvider>
+    </WishlistProvider>
     </BrowserRouter>
   );
 }

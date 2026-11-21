@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axiosClient, { resolveAssetUrl } from '../../api/axiosClient';
+import { Heart } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { useWishlist } from '../../context/WishlistContext';
 import ProductReviewsSection from '../../components/product/ProductReviewsSection';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
   const { addItem } = useCart();
+  const { isWishlisted, toggleWishlist } = useWishlist();
   const [product, setProduct] = useState(null);
   const [selectedColor, setSelectedColor] = useState('');
   const [activeImageUrl, setActiveImageUrl] = useState('');
@@ -226,6 +229,28 @@ export default function ProductDetailPage() {
             })}
           >
             Add to Shopping Bag
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleWishlist(product.id)}
+            aria-label="Save to Wishlist"
+            title={isWishlisted(product.id) ? "Saved in Wishlist" : "Save to Wishlist"}
+            style={{
+              padding: '0 16px',
+              borderRadius: 10,
+              border: isWishlisted(product.id) ? '1.5px solid #9E2A2B' : '1px solid var(--brand-gold)',
+              background: isWishlisted(product.id) ? '#FDECEA' : '#FFFFFF',
+              color: isWishlisted(product.id) ? '#9E2A2B' : 'var(--brand-plum)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              cursor: 'pointer',
+              fontWeight: 600,
+              fontSize: '0.85rem'
+            }}
+          >
+            <Heart size={18} fill={isWishlisted(product.id) ? '#9E2A2B' : 'transparent'} />
           </button>
         </div>
 

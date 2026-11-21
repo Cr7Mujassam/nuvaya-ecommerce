@@ -1,11 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Star } from 'lucide-react';
+import { ShoppingBag, Star, Heart } from 'lucide-react';
+import { useWishlist } from '../../context/WishlistContext';
 import { FALLBACK_IMAGE, resolveAssetUrl } from '../../api/axiosClient';
 import { useCart } from '../../context/CartContext';
 
 export default function ProductCard({ product }) {
   const { addItem } = useCart();
+  const { isWishlisted, toggleWishlist } = useWishlist();
+  const liked = isWishlisted(product.id);
   const navigate = useNavigate();
   const [selectedColor, setSelectedColor] = useState(product.colors?.[0]?.name || '');
   const [selectedPack, setSelectedPack] = useState(null);
@@ -188,6 +191,39 @@ export default function ProductCard({ product }) {
           {product.newArrival && <span style={badgeStyle('#27101B')}>NEW IN</span>}
           {product.bestSeller && <span style={badgeStyle('#9B773E')}>BESTSELLER</span>}
         </div>
+
+        {/* Favorite / Wishlist Heart Button */}
+        <button
+          type="button"
+          aria-label={liked ? "Remove from Wishlist" : "Save to Wishlist"}
+          title={liked ? "Saved in Wishlist" : "Add to Wishlist"}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleWishlist(product.id);
+          }}
+          style={{
+            position: 'absolute',
+            top: discountPct > 0 ? 44 : 12,
+            right: 12,
+            width: 34,
+            height: 34,
+            borderRadius: '50%',
+            background: 'rgba(251, 248, 243, 0.94)',
+            backdropFilter: 'blur(6px)',
+            border: liked ? '1.5px solid #27101B' : '1px solid rgba(198,161,99,0.65)',
+            color: liked ? '#9E2A2B' : 'var(--brand-plum)',
+            display: 'grid',
+            placeItems: 'center',
+            cursor: 'pointer',
+            boxShadow: '0 3px 10px rgba(39,16,27,0.14)',
+            zIndex: 4,
+            padding: 0,
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <Heart size={16} fill={liked ? '#9E2A2B' : 'transparent'} strokeWidth={1.9} />
+        </button>
 
         {/* Top Right Discount Pill */}
         {discountPct > 0 && (
