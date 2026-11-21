@@ -45,7 +45,7 @@ export const resolveAssetUrl = (url) => {
     return url.replace('http://localhost:8083', '');
   }
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  if (url.startsWith('/uploads/')) return url;
+  if (url.startsWith('/uploads/') || url.startsWith('/campaigns/')) return url;
   return `${API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
