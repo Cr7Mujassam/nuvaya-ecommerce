@@ -3,19 +3,23 @@ package com.nuvaya.controller;
 import com.nuvaya.dto.response.OrderResponse;
 import com.nuvaya.entity.StoreSettings;
 import com.nuvaya.entity.enums.OrderStatus;
+import com.nuvaya.service.OrderEmailService;
 import com.nuvaya.service.OrderService;
 import com.nuvaya.service.StoreSettingsService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.Map;
 
-@RestController @RequestMapping("/api/v1/admin") @RequiredArgsConstructor
-// Supports /test-email diagnostic
+@RestController
+@RequestMapping("/api/v1/admin")
+@RequiredArgsConstructor
 public class AdminOrderController {
     private final OrderService orderService;
-    private final com.nuvaya.service.OrderEmailService orderEmailService;
+    private final OrderEmailService orderEmailService;
     private final StoreSettingsService storeSettingsService;
 
     @GetMapping("/orders")
@@ -50,7 +54,7 @@ public class AdminOrderController {
     }
 
     @PostMapping("/test-email")
-    public java.util.Map<String, Object> testEmail(@RequestParam(required = false) String to) {
+    public Map<String, Object> testEmail(@RequestParam(required = false) String to) {
         return orderEmailService.sendTestEmail(to);
     }
 }
