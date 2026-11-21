@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosClient, { resolveAssetUrl } from '../../api/axiosClient';
-import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import ProductReviewsSection from '../../components/product/ProductReviewsSection';
@@ -19,7 +19,7 @@ export default function ProductDetailPage() {
   const [mixedColors, setMixedColors] = useState([]);
   const [qty, setQty] = useState(1);
   const [buyingNow, setBuyingNow] = useState(false);
-  const touchStartX = useRef(null);
+  const galleryRef = useRef(null);
 
   useEffect(() => {
     axiosClient.get(`/products/${id}`).then((r) => {
@@ -49,21 +49,38 @@ export default function ProductDetailPage() {
     images.findIndex((im) => im.imageUrl === (activeImageUrl || images[0]?.imageUrl))
   );
 
-  const goToImage = (nextIdx) => {
-    if (!images.length) return;
-    const normalized = (nextIdx + images.length) % images.length;
-    const target = images[normalized];
+  const scrollToImage = (idx) => {
+    const target = images[idx];
+    if (!target) return;
     setActiveImageUrl(target.imageUrl);
     if (target.colorName) setSelectedColor(target.colorName);
+    if (galleryRef.current) {
+      galleryRef.current.scrollTo({
+        left: idx * galleryRef.current.clientWidth,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  const handleGalleryScroll = () => {
+    if (!galleryRef.current || !images.length) return;
+    const width = galleryRef.current.clientWidth;
+    if (!width) return;
+    const idx = Math.round(galleryRef.current.scrollLeft / width);
+    const target = images[idx];
+    if (target && target.imageUrl !== activeImageUrl) {
+      setActiveImageUrl(target.imageUrl);
+      if (target.colorName) setSelectedColor(target.colorName);
+    }
   };
 
   const handleColorSelect = (colorName) => {
     setSelectedColor(colorName);
-    const matchingImg = images.find(
+    const idx = images.findIndex(
       (im) => im.colorName?.toLowerCase() === colorName.toLowerCase()
     );
-    if (matchingImg) {
-      setActiveImageUrl(matchingImg.imageUrl);
+    if (idx !== -1) {
+      scrollToImage(idx);
     }
   };
 
@@ -104,96 +121,64 @@ export default function ProductDetailPage() {
     <>
     <div style={{ maxWidth: 1160, margin: '40px auto', padding: '0 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 44 }}>
       <div>
-        <div
-          onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
-          onTouchEnd={(e) => {
-            if (touchStartX.current === null || images.length <= 1) return;
-            const delta = e.changedTouches[0].clientX - touchStartX.current;
-            if (Math.abs(delta) > 40) goToImage(delta < 0 ? currentIdx + 1 : currentIdx - 1);
-            touchStartX.current = null;
-          }}
-          style={{
-            position: 'relative',
-            borderRadius: 16,
-            overflow: 'hidden',
-            background: 'var(--bg-cream)',
-            border: '1px solid var(--border-sand)',
-            userSelect: 'none'
-          }}
-        >
-          <img
-            src={resolveAssetUrl(activeImageUrl || images[0]?.imageUrl)}
-            alt={product.name}
-            style={{ width: '100%', maxHeight: 560, objectFit: 'cover', display: 'block' }}
-          />
+        <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', background: 'var(--bg-cream)', border: '1px solid var(--border-sand)' }}>
+          <div
+            ref={galleryRef}
+            onScroll={handleGalleryScroll}
+            style={{
+              display: 'flex',
+              overflowX: 'auto',
+              scrollSnapType: 'x mandatory',
+              scrollBehavior: 'smooth',
+              WebkitOverflowScrolling: 'touch',
+            }}
+          >
+            {(images.length ? images : [{ imageUrl: '' }]).map((img, idx) => (
+              <div
+                key={img.id || idx}
+                style={{
+                  flex: '0 0 100%',
+                  width: '100%',
+                  scrollSnapAlign: 'start',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'var(--bg-cream)',
+                }}
+              >
+                <img
+                  src={resolveAssetUrl(img.imageUrl)}
+                  alt={img.colorName ? `${product.name} - ${img.colorName}` : `${product.name} ${idx + 1}`}
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    maxHeight: 520,
+                    objectFit: 'contain',
+                    display: 'block',
+                  }}
+                />
+              </div>
+            ))}
+          </div>
 
           {images.length > 1 && (
-            <>
-              <button
-                type="button"
-                aria-label="Previous image"
-                onClick={() => goToImage(currentIdx - 1)}
-                style={{
-                  position: 'absolute',
-                  left: 12,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  width: 38,
-                  height: 38,
-                  borderRadius: '50%',
-                  border: '1px solid var(--border-sand)',
-                  background: 'rgba(255,255,255,0.9)',
-                  color: 'var(--brand-plum)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                }}
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <button
-                type="button"
-                aria-label="Next image"
-                onClick={() => goToImage(currentIdx + 1)}
-                style={{
-                  position: 'absolute',
-                  right: 12,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  width: 38,
-                  height: 38,
-                  borderRadius: '50%',
-                  border: '1px solid var(--border-sand)',
-                  background: 'rgba(255,255,255,0.9)',
-                  color: 'var(--brand-plum)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                }}
-              >
-                <ChevronRight size={20} />
-              </button>
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: 12,
-                  right: 12,
-                  padding: '4px 10px',
-                  borderRadius: 999,
-                  background: 'rgba(28, 22, 24, 0.72)',
-                  color: '#fff',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  letterSpacing: '0.06em'
-                }}
-              >
-                {currentIdx + 1} / {images.length}
-              </div>
-            </>
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 12,
+                right: 12,
+                padding: '4px 10px',
+                borderRadius: 999,
+                background: 'rgba(28, 22, 24, 0.72)',
+                color: '#fff',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                letterSpacing: '0.06em',
+                pointerEvents: 'none',
+              }}
+            >
+              {currentIdx + 1} / {images.length}
+            </div>
           )}
         </div>
 
@@ -205,7 +190,7 @@ export default function ProductDetailPage() {
                 <button
                   key={img.id || idx}
                   type="button"
-                  onClick={() => goToImage(idx)}
+                  onClick={() => scrollToImage(idx)}
                   style={{
                     padding: 0,
                     borderRadius: 10,

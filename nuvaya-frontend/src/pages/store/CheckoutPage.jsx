@@ -16,6 +16,16 @@ function loadRazorpayScript() {
   });
 }
 
+const INDIAN_STATES = [
+  "Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam",
+  "Bihar", "Chandigarh", "Chhattisgarh", "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jammu and Kashmir",
+  "Jharkhand", "Karnataka", "Kerala", "Ladakh", "Lakshadweep", "Madhya Pradesh",
+  "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha",
+  "Puducherry", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana",
+  "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
+];
+
 export default function CheckoutPage() {
   const { items, subtotal, deliveryCharges, discounts, totalAmount, storeSettings, clearCart } = useCart();
   const navigate = useNavigate();
@@ -152,7 +162,12 @@ export default function CheckoutPage() {
           <textarea required rows={3} placeholder="Full Delivery Address *" value={form.deliveryAddress} onChange={(e) => setForm({ ...form, deliveryAddress: e.target.value })} style={inp} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <input required placeholder="City *" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} style={inp} />
-            <input required placeholder="State *" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} style={inp} />
+            <select required value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} style={{ ...inp, background: "#fff", color: form.state ? "inherit" : "#6b7280" }}>
+              <option value="" disabled>Select State / UT *</option>
+              {INDIAN_STATES.map((st) => (
+                <option key={st} value={st} style={{ color: "#111" }}>{st}</option>
+              ))}
+            </select>
           </div>
           <input required maxLength={6} placeholder="6-Digit PIN Code *" value={form.pinCode} onChange={(e) => setForm({ ...form, pinCode: e.target.value })} style={inp} />
           <textarea rows={2} placeholder="Optional Order Notes" value={form.orderNotes} onChange={(e) => setForm({ ...form, orderNotes: e.target.value })} style={inp} />
