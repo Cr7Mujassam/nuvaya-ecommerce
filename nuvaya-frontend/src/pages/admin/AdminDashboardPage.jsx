@@ -1204,6 +1204,8 @@ export default function AdminDashboardPage() {
             <button type="submit" className="btn-primary" style={{ justifySelf: 'start', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               <CheckCircle2 size={16} /> Save Store & Footer Details
             </button>
+            <button type="button" className="btn-outline" disabled={testingEmail} style={{marginLeft:10}} onClick={async()=>{setTestingEmail(true);setTestEmailResult(null);try{const {data}=await axiosClient.post("/admin/test-email");setTestEmailResult(data);}catch(e){setTestEmailResult({sent:false,error:e.response?.data?.message||e.message});}finally{setTestingEmail(false);}}}>{testingEmail?"Testing SMTP...":"Send Test Email"}</button>
+            {testEmailResult&&(<div style={{marginTop:10,padding:12,borderRadius:10,fontSize:"0.84rem",background:testEmailResult.sent?"#E6F4EA":"#FDECEA",color:testEmailResult.sent?"#1E6F50":"#842029",border:`1px solid ${testEmailResult.sent?"#B7DFC1":"#F5C2C7"}`}}>{testEmailResult.sent?`Success! Sent from ${testEmailResult.from} to ${testEmailResult.to}`:`SMTP Error (${testEmailResult.host||"SMTP"}:${testEmailResult.port||"587"}): ${testEmailResult.error}`}</div>)}
           </form>
         )}
       </div>
