@@ -1,41 +1,61 @@
 export function buildWhatsAppCheckoutUrl({
   whatsappNumber, orderReference, customerName, customerMobile,
   deliveryAddress, city, state, pinCode, orderNotes,
-  items, subtotal, deliveryCharges, discountAmount, finalAmount
+  items = [], subtotal, deliveryCharges, discountAmount, finalAmount
 }) {
   const cleanPhone = String(whatsappNumber || '').replace(/[^0-9]/g, '');
   const fullAddress = `${deliveryAddress}, ${city}, ${state} - ${pinCode}`;
 
+  const totalQty = items.reduce((sum, it) => sum + Number(it.quantity || 1), 0);
+
   const lines = [
-    'Hello NUVAYA Team!',
-    'I would like to place an order.',
-    `Order Ref: ${orderReference}`,
+    `*NUVAYA ORDER — ${orderReference}*`,
     '',
-    'Customer Details:',
+    '*Delivery Details:*',
     `Name: ${customerName}`,
     `Mobile: ${customerMobile}`,
     `Address: ${fullAddress}`,
   ];
-  if (orderNotes?.trim()) lines.push(`Notes: ${orderNotes.trim()}`);
-  lines.push('', 'Order Details:');
 
-  let idx = 1;
-  items.forEach((item) => {
-    lines.push(`${idx++}. Product: ${item.productName}`);
-    if (item.selectedColor) lines.push(`${idx++}. Color: ${item.selectedColor}`);
-    if (item.mixedColorsSummary) lines.push(`${idx++}. Mixed Colors: ${item.mixedColorsSummary}`);
-    if (item.packName) lines.push(`${idx++}. Pack: ${item.packName}`);
-    if (item.selectedSize) lines.push(`${idx++}. Size: ${item.selectedSize}`);
-    lines.push(`${idx++}. Quantity: ${item.quantity}`);
-    lines.push(`${idx++}. Price: ₹${Number(item.lineTotal).toLocaleString('en-IN')}`);
+  if (orderNotes?.trim()) {
+    lines.push(`Delivery Note: ${orderNotes.trim()}`);
+  }
+
+  lines.push('', `*Order Summary (${items.length} ${items.length === 1 ? 'Item' : 'Items'} • ${totalQty} Qty):*`);
+
+  const MAX_VISIBLE_ITEMS = 4;
+  const visibleItems = items.slice(0, MAX_VISIBLE_ITEMS);
+
+  visibleItems.forEach((item) => {
+    const meta = [
+      item.packName,
+      item.mixedColorsSummary ? `Colors: ${item.mixedColorsSummary}` : item.selectedColor,
+      item.selectedSize && item.selectedSize !== 'Standard' ? `Size: ${item.selectedSize}` : null,
+    ].filter(Boolean).join(' • ');
+
+    const metaText = meta ? ` (${meta})` : '';
+    lines.push(`• ${item.quantity}× ${item.productName}${metaText} — ₹${Number(item.lineTotal).toLocaleString('en-IN')}`);
   });
 
+  if (items.length > MAX_VISIBLE_ITEMS) {
+    const remainingCount = items.length - MAX_VISIBLE_ITEMS;
+    lines.push(`• +${remainingCount} more ${remainingCount === 1 ? 'item' : 'items'} (Full list saved under ${orderReference})`);
+  }
+
+  lines.push('');
+
+  if (Number(deliveryCharges) > 0) {
+    lines.push(`Delivery: ₹${Number(deliveryCharges).toLocaleString('en-IN')}`);
+  } else {
+    lines.push('Delivery: FREE');
+  }
+
+  if (Number(discountAmount) > 0) {
+    lines.push(`Discount: -₹${Number(discountAmount).toLocaleString('en-IN')}`);
+  }
+
   lines.push(
-    '',
-    `Subtotal: ₹${Number(subtotal).toLocaleString('en-IN')}`,
-    `Delivery Charges: ₹${Number(deliveryCharges).toLocaleString('en-IN')}`,
-    `Discount: ₹${Number(discountAmount).toLocaleString('en-IN')}`,
-    `Total Amount: ₹${Number(finalAmount).toLocaleString('en-IN')}`,
+    `*Total Payable: ₹${Number(finalAmount).toLocaleString('en-IN')}*`,
     '',
     'Please confirm my order.'
   );
