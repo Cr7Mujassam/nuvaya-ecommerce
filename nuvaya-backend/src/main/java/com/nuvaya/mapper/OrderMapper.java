@@ -14,6 +14,7 @@ public class OrderMapper {
                 .orderReference(o.getOrderReference())
                 .customerName(o.getCustomerName())
                 .customerMobile(o.getCustomerMobile())
+                .customerEmail(o.getCustomerEmail())
                 .deliveryAddress(o.getDeliveryAddress())
                 .city(o.getCity())
                 .state(o.getState())

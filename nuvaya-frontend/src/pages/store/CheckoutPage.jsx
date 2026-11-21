@@ -28,6 +28,7 @@ export default function CheckoutPage() {
   const [form, setForm] = useState({
     customerName: '',
     customerMobile: '',
+    customerEmail: '',
     deliveryAddress: '',
     city: '',
     state: '',
@@ -76,6 +77,7 @@ export default function CheckoutPage() {
           prefill: {
             name: order.customerName,
             contact: order.customerMobile,
+            ...(order.customerEmail ? { email: order.customerEmail } : {}),
           },
           theme: { color: '#231019' },
           handler: async (response) => {
@@ -143,7 +145,10 @@ export default function CheckoutPage() {
 
         <div style={{ display: 'grid', gap: 12 }}>
           <input required placeholder="Full Name *" value={form.customerName} onChange={(e) => setForm({ ...form, customerName: e.target.value })} style={inp} />
-          <input required placeholder="Mobile Number *" value={form.customerMobile} onChange={(e) => setForm({ ...form, customerMobile: e.target.value })} style={inp} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 10 }}>
+            <input required placeholder="Mobile Number *" value={form.customerMobile} onChange={(e) => setForm({ ...form, customerMobile: e.target.value })} style={inp} />
+            <input required type="email" placeholder="Email Address (for order updates) *" value={form.customerEmail} onChange={(e) => setForm({ ...form, customerEmail: e.target.value })} style={inp} />
+          </div>
           <textarea required rows={3} placeholder="Full Delivery Address *" value={form.deliveryAddress} onChange={(e) => setForm({ ...form, deliveryAddress: e.target.value })} style={inp} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <input required placeholder="City *" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} style={inp} />

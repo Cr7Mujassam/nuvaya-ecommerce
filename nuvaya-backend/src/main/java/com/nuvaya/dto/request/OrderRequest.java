@@ -11,6 +11,8 @@ public class OrderRequest {
     @NotBlank private String customerName;
     @NotBlank @Pattern(regexp = "^[0-9+\\-\\s]{10,15}$", message = "Enter a valid mobile number")
     private String customerMobile;
+    @Email(message = "Enter a valid email address")
+    private String customerEmail;
     @NotBlank private String deliveryAddress;
     @NotBlank private String city;
     @NotBlank private String state;

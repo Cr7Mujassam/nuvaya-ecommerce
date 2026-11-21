@@ -830,7 +830,7 @@ export default function AdminDashboardPage() {
                     <span style={statusPill(o.status)}>{o.status}</span>
                     {o.paymentMethod && <span style={{ fontSize: '0.68rem', fontWeight: 800, padding: '3px 9px', borderRadius: 999, background: o.paymentStatus === 'PAID' ? '#E6F4EA' : '#FFF4E5', color: o.paymentStatus === 'PAID' ? '#1E6F50' : '#9A5B13' }}>{o.paymentMethod} • {o.paymentStatus || 'PENDING'}</span>}
                   </div>
-                  <div style={{ fontWeight: 600, marginTop: 4 }}>{o.customerName} • {o.customerMobile}</div>
+                  <div style={{ fontWeight: 600, marginTop: 4 }}>{o.customerName} • {o.customerMobile}{o.customerEmail ? ` • ${o.customerEmail}` : ''}</div>
                   <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{o.deliveryAddress}, {o.city}, {o.state} - {o.pinCode}</div>
                   <div style={{ fontSize: '0.86rem', marginTop: 8, color: 'var(--brand-plum)' }}>
                     {o.items.map((it, idx) => (

@@ -14,6 +14,7 @@ public class DatabaseConstraintFixer {
     public void repairLegacySchemaValues() {
         String[] statements = {
             "ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_email VARCHAR(140)",
             "ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_id VARCHAR(80)",
             "ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier_partner VARCHAR(80)",
             "ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method VARCHAR(25) DEFAULT 'WHATSAPP'",

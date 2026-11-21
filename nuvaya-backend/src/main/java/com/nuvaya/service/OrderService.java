@@ -46,6 +46,7 @@ public class OrderService {
                 .orderReference(OrderReferenceGenerator.generate())
                 .customerName(request.getCustomerName().trim())
                 .customerMobile(request.getCustomerMobile().trim())
+                .customerEmail(request.getCustomerEmail() != null && !request.getCustomerEmail().isBlank() ? request.getCustomerEmail().trim() : null)
                 .deliveryAddress(request.getDeliveryAddress().trim())
                 .city(request.getCity().trim())
                 .state(request.getState().trim())
@@ -163,8 +164,8 @@ public class OrderService {
             o.setCourierPartner(courierPartner.trim().isEmpty() ? null : courierPartner.trim());
         }
         Order updated = orderRepository.save(o);
-        if (status == OrderStatus.CONFIRMED) {
-            orderEmailService.sendOrderAlert(updated, "Order Confirmed in Admin Studio");
+        if (status == OrderStatus.CONFIRMED || status == OrderStatus.PACKED || status == OrderStatus.SHIPPED || status == OrderStatus.DELIVERED) {
+            orderEmailService.sendOrderAlert(updated, "Order Status Updated: " + status);
         }
         return orderMapper.toResponse(updated);
     }

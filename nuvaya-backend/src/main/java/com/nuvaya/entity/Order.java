@@ -21,6 +21,8 @@ public class Order {
     private String customerName;
     @Column(nullable = false, length = 20)
     private String customerMobile;
+    @Column(length = 140)
+    private String customerEmail;
     @Column(nullable = false, length = 500)
     private String deliveryAddress;
     @Column(nullable = false, length = 80)

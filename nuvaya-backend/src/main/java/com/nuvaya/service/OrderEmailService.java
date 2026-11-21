@@ -27,14 +27,16 @@ public class OrderEmailService {
     private String adminNotificationEmail;
 
     public void sendOrderAlert(Order order, String eventTitle) {
-        // Snapshot order data synchronously while Hibernate session is active
         String ref = order.getOrderReference();
         String status = String.valueOf(order.getStatus());
         String payMethod = String.valueOf(order.getPaymentMethod());
         String payStatus = String.valueOf(order.getPaymentStatus());
         String rzpPayId = order.getRazorpayPaymentId();
+        String trackingId = order.getTrackingId();
+        String courierPartner = order.getCourierPartner();
         String custName = order.getCustomerName();
         String custMobile = order.getCustomerMobile();
+        String custEmail = order.getCustomerEmail();
         String address = order.getDeliveryAddress() + ", " + order.getCity() + ", " + order.getState() + " - " + order.getPinCode();
         String notes = order.getOrderNotes();
         String total = String.valueOf(order.getFinalAmount());
@@ -49,22 +51,26 @@ public class OrderEmailService {
             }
         }
 
-        dispatchEmailAsync(ref, status, payMethod, payStatus, rzpPayId, custName, custMobile, address, notes, total, itemLines, eventTitle);
+        dispatchEmailsAsync(ref, status, payMethod, payStatus, rzpPayId, trackingId, courierPartner,
+                custName, custMobile, custEmail, address, notes, total, itemLines, eventTitle);
     }
 
     @Async
-    protected void dispatchEmailAsync(String ref, String status, String payMethod, String payStatus,
-                                      String rzpPayId, String custName, String custMobile,
-                                      String address, String notes, String total,
-                                      List<String> itemLines, String eventTitle) {
+    protected void dispatchEmailsAsync(String ref, String status, String payMethod, String payStatus,
+                                       String rzpPayId, String trackingId, String courierPartner,
+                                       String custName, String custMobile, String custEmail,
+                                       String address, String notes, String total,
+                                       List<String> itemLines, String eventTitle) {
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
         if (mailSender == null || mailUsername == null || mailUsername.isBlank()) {
-            log.warn("SMTP credentials missing (MAIL_USERNAME is empty); order email skipped for {}", ref);
+            log.warn("SMTP credentials missing (MAIL_USERNAME is empty); order emails skipped for {}", ref);
             return;
         }
+
+        // 1. Admin Email to NuVaya (modest.fashion@nuvaya.co.in)
         try {
-            StringBuilder body = new StringBuilder();
-            body.append("Assalamu Alaikum NuVaya Team,\n\n")
+            StringBuilder adminBody = new StringBuilder();
+            adminBody.append("Assalamu Alaikum NuVaya Team,\n\n")
                 .append(eventTitle).append("\n\n")
                 .append("Order Reference: ").append(ref).append("\n")
                 .append("Order Status: ").append(status).append("\n")
@@ -72,36 +78,84 @@ public class OrderEmailService {
                 .append("Payment Status: ").append(payStatus).append("\n");
 
             if (rzpPayId != null && !rzpPayId.isBlank()) {
-                body.append("Razorpay Payment ID: ").append(rzpPayId).append("\n");
+                adminBody.append("Razorpay Payment ID: ").append(rzpPayId).append("\n");
+            }
+            if (trackingId != null && !trackingId.isBlank()) {
+                adminBody.append("NimbusPost AWB: ").append(trackingId)
+                    .append(courierPartner != null ? " (" + courierPartner + ")" : "").append("\n");
             }
 
-            body.append("\n--- Customer & Delivery Details ---\n")
+            adminBody.append("\n--- Customer & Delivery Details ---\n")
                 .append("Name: ").append(custName).append("\n")
-                .append("Mobile: ").append(custMobile).append("\n")
-                .append("Address: ").append(address).append("\n");
+                .append("Mobile: ").append(custMobile).append("\n");
+            if (custEmail != null && !custEmail.isBlank()) {
+                adminBody.append("Email: ").append(custEmail).append("\n");
+            }
+            adminBody.append("Address: ").append(address).append("\n");
 
             if (notes != null && !notes.isBlank()) {
-                body.append("Notes: ").append(notes).append("\n");
+                adminBody.append("Notes: ").append(notes).append("\n");
             }
 
-            body.append("\n--- Ordered Items ---\n");
+            adminBody.append("\n--- Ordered Items ---\n");
             for (String line : itemLines) {
-                body.append(line).append("\n");
+                adminBody.append(line).append("\n");
             }
 
-            body.append("\nTotal Amount Payable: Rs. ").append(total).append("\n")
-                .append("Track Link: https://nuvaya.co.in/track-order?ref=").append(ref).append("\n");
+            adminBody.append("\nTotal Amount: Rs. ").append(total).append("\n")
+                .append("Admin Panel: https://nuvaya.co.in/admin\n");
 
-            SimpleMailMessage msg = new SimpleMailMessage();
-            msg.setFrom(mailUsername);
-            msg.setTo(adminNotificationEmail);
-            msg.setSubject("[NuVaya Order] " + ref + " — " + eventTitle);
-            msg.setText(body.toString());
-
-            mailSender.send(msg);
-            log.info("Order notification email sent to {} for {}", adminNotificationEmail, ref);
+            SimpleMailMessage adminMsg = new SimpleMailMessage();
+            adminMsg.setFrom(mailUsername);
+            adminMsg.setTo(adminNotificationEmail);
+            adminMsg.setSubject("[NuVaya Order] " + ref + " — " + eventTitle);
+            adminMsg.setText(adminBody.toString());
+            mailSender.send(adminMsg);
+            log.info("Admin order email sent to {} for {}", adminNotificationEmail, ref);
         } catch (Exception e) {
-            log.error("Failed to send order email for {}: {}", ref, e.getMessage(), e);
+            log.error("Failed to send admin order email for {}: {}", ref, e.getMessage(), e);
+        }
+
+        // 2. Customer Order Confirmation & Status Email
+        if (custEmail != null && !custEmail.isBlank()) {
+            try {
+                StringBuilder custBody = new StringBuilder();
+                custBody.append("Assalamu Alaikum ").append(custName).append(",\n\n")
+                    .append("Thank you for shopping with NUVAYA Modest Luxury! Here is an update on your order:\n\n")
+                    .append("Order ID: ").append(ref).append("\n")
+                    .append("Current Status: ").append(status).append("\n")
+                    .append("Payment Method: ").append(payMethod).append(" (").append(payStatus).append(")\n");
+
+                if (trackingId != null && !trackingId.isBlank()) {
+                    custBody.append("Shipment Tracking ID (AWB): ").append(trackingId);
+                    if (courierPartner != null && !courierPartner.isBlank()) {
+                        custBody.append(" via ").append(courierPartner);
+                    }
+                    custBody.append("\nLive Courier Tracking: https://ship.nimbuspost.com/shipping/tracking/")
+                        .append(trackingId).append("\n");
+                }
+
+                custBody.append("\n--- Your Order Summary ---\n");
+                for (String line : itemLines) {
+                    custBody.append(line).append("\n");
+                }
+                custBody.append("\nTotal Payable: Rs. ").append(total).append("\n")
+                    .append("Delivery Address: ").append(address).append("\n\n")
+                    .append("Track your NuVaya order anytime here:\n")
+                    .append("https://nuvaya.co.in/track-order?ref=").append(ref).append("\n\n")
+                    .append("Warm regards,\nNUVAYA Modest Luxury Team\nhttps://nuvaya.co.in\n");
+
+                SimpleMailMessage custMsg = new SimpleMailMessage();
+                custMsg.setFrom(mailUsername);
+                custMsg.setTo(custEmail);
+                custMsg.setReplyTo(adminNotificationEmail);
+                custMsg.setSubject("NUVAYA Order " + ref + " — " + status);
+                custMsg.setText(custBody.toString());
+                mailSender.send(custMsg);
+                log.info("Customer order email sent to {} for {}", custEmail, ref);
+            } catch (Exception e) {
+                log.error("Failed to send customer email to {} for {}: {}", custEmail, ref, e.getMessage(), e);
+            }
         }
     }
 }

@@ -15,6 +15,7 @@ public class OrderResponse {
     private String orderReference;
     private String customerName;
     private String customerMobile;
+    private String customerEmail;
     private String deliveryAddress;
     private String city;
     private String state;
