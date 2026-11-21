@@ -30,6 +30,7 @@ public class SecurityConfig {
             .headers(h -> h.frameOptions(f -> f.sameOrigin()))
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(a -> a
+                .requestMatchers("/api/v1/health").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/v1/admin/auth/login").permitAll()
                 .requestMatchers("/api/v1/products/**", "/api/v1/categories/**", "/api/v1/store/settings").permitAll()
