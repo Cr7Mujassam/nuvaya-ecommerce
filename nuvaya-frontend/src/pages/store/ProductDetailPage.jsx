@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import axiosClient, { resolveAssetUrl } from '../../api/axiosClient';
-import { Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import ProductReviewsSection from '../../components/product/ProductReviewsSection';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { addItem } = useCart();
   const { isWishlisted, toggleWishlist } = useWishlist();
   const [product, setProduct] = useState(null);
@@ -17,6 +18,8 @@ export default function ProductDetailPage() {
   const [selectedPack, setSelectedPack] = useState(null);
   const [mixedColors, setMixedColors] = useState([]);
   const [qty, setQty] = useState(1);
+  const [buyingNow, setBuyingNow] = useState(false);
+  const touchStartX = useRef(null);
 
   useEffect(() => {
     axiosClient.get(`/products/${id}`).then((r) => {
@@ -40,9 +43,23 @@ export default function ProductDetailPage() {
 
   if (!product) return <div style={{ padding: 60, textAlign: 'center' }}>Loading product...</div>;
 
+  const images = product.images || [];
+  const currentIdx = Math.max(
+    0,
+    images.findIndex((im) => im.imageUrl === (activeImageUrl || images[0]?.imageUrl))
+  );
+
+  const goToImage = (nextIdx) => {
+    if (!images.length) return;
+    const normalized = (nextIdx + images.length) % images.length;
+    const target = images[normalized];
+    setActiveImageUrl(target.imageUrl);
+    if (target.colorName) setSelectedColor(target.colorName);
+  };
+
   const handleColorSelect = (colorName) => {
     setSelectedColor(colorName);
-    const matchingImg = product.images?.find(
+    const matchingImg = images.find(
       (im) => im.colorName?.toLowerCase() === colorName.toLowerCase()
     );
     if (matchingImg) {
@@ -59,6 +76,26 @@ export default function ProductDetailPage() {
     }
   };
 
+  const buildCartPayload = () => ({
+    productId: product.id,
+    packId: selectedPack?.id || null,
+    selectedColor: selectedPack?.allowMixedColors ? 'Mixed Pack' : selectedColor,
+    mixedColors: selectedPack?.allowMixedColors ? mixedColors : [],
+    selectedSize,
+    quantity: qty,
+  });
+
+  const handleBuyNow = async () => {
+    if (buyingNow) return;
+    setBuyingNow(true);
+    try {
+      await addItem(buildCartPayload());
+      navigate('/checkout');
+    } finally {
+      setBuyingNow(false);
+    }
+  };
+
   const activePrice = selectedPack
     ? (selectedPack.discountPrice || selectedPack.packPrice)
     : (product.discountPrice || product.basePrice);
@@ -67,26 +104,108 @@ export default function ProductDetailPage() {
     <>
     <div style={{ maxWidth: 1160, margin: '40px auto', padding: '0 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 44 }}>
       <div>
-        <div style={{ borderRadius: 16, overflow: 'hidden', background: 'var(--bg-cream)', border: '1px solid var(--border-sand)' }}>
+        <div
+          onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+          onTouchEnd={(e) => {
+            if (touchStartX.current === null || images.length <= 1) return;
+            const delta = e.changedTouches[0].clientX - touchStartX.current;
+            if (Math.abs(delta) > 40) goToImage(delta < 0 ? currentIdx + 1 : currentIdx - 1);
+            touchStartX.current = null;
+          }}
+          style={{
+            position: 'relative',
+            borderRadius: 16,
+            overflow: 'hidden',
+            background: 'var(--bg-cream)',
+            border: '1px solid var(--border-sand)',
+            userSelect: 'none'
+          }}
+        >
           <img
-            src={resolveAssetUrl(activeImageUrl || product.images?.[0]?.imageUrl)}
+            src={resolveAssetUrl(activeImageUrl || images[0]?.imageUrl)}
             alt={product.name}
             style={{ width: '100%', maxHeight: 560, objectFit: 'cover', display: 'block' }}
           />
+
+          {images.length > 1 && (
+            <>
+              <button
+                type="button"
+                aria-label="Previous image"
+                onClick={() => goToImage(currentIdx - 1)}
+                style={{
+                  position: 'absolute',
+                  left: 12,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: 38,
+                  height: 38,
+                  borderRadius: '50%',
+                  border: '1px solid var(--border-sand)',
+                  background: 'rgba(255,255,255,0.9)',
+                  color: 'var(--brand-plum)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                }}
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                type="button"
+                aria-label="Next image"
+                onClick={() => goToImage(currentIdx + 1)}
+                style={{
+                  position: 'absolute',
+                  right: 12,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: 38,
+                  height: 38,
+                  borderRadius: '50%',
+                  border: '1px solid var(--border-sand)',
+                  background: 'rgba(255,255,255,0.9)',
+                  color: 'var(--brand-plum)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                }}
+              >
+                <ChevronRight size={20} />
+              </button>
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: 12,
+                  right: 12,
+                  padding: '4px 10px',
+                  borderRadius: 999,
+                  background: 'rgba(28, 22, 24, 0.72)',
+                  color: '#fff',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.06em'
+                }}
+              >
+                {currentIdx + 1} / {images.length}
+              </div>
+            </>
+          )}
         </div>
 
-        {product.images?.length > 1 && (
+        {images.length > 1 && (
           <div style={{ display: 'flex', gap: 10, marginTop: 14, overflowX: 'auto', paddingBottom: 4 }}>
-            {product.images.map((img, idx) => {
-              const isSelected = (activeImageUrl || product.images[0]?.imageUrl) === img.imageUrl;
+            {images.map((img, idx) => {
+              const isSelected = idx === currentIdx;
               return (
                 <button
                   key={img.id || idx}
                   type="button"
-                  onClick={() => {
-                    setActiveImageUrl(img.imageUrl);
-                    if (img.colorName) setSelectedColor(img.colorName);
-                  }}
+                  onClick={() => goToImage(idx)}
                   style={{
                     padding: 0,
                     borderRadius: 10,
@@ -214,21 +333,31 @@ export default function ProductDetailPage() {
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-          <input type="number" min={1} max={20} value={qty} onChange={(e) => setQty(Number(e.target.value))} style={{ width: 72, padding: 12, borderRadius: 8, border: '1px solid var(--border-sand)', textAlign: 'center' }} />
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 24 }}>
+          <input
+            type="number"
+            min={1}
+            max={20}
+            value={qty}
+            onChange={(e) => setQty(Math.max(1, Number(e.target.value)))}
+            style={{ width: 68, padding: 12, borderRadius: 8, border: '1px solid var(--border-sand)', textAlign: 'center', fontWeight: 600 }}
+          />
           <button
-            className="btn-primary"
-            style={{ flex: 1 }}
-            onClick={() => addItem({
-              productId: product.id,
-              packId: selectedPack?.id || null,
-              selectedColor: selectedPack?.allowMixedColors ? 'Mixed Pack' : selectedColor,
-              mixedColors: selectedPack?.allowMixedColors ? mixedColors : [],
-              selectedSize,
-              quantity: qty,
-            })}
+            type="button"
+            className="btn-outline"
+            style={{ flex: '1 1 170px', borderRadius: 999, padding: '13px 18px', fontWeight: 700, letterSpacing: '0.06em' }}
+            onClick={() => addItem(buildCartPayload())}
           >
             Add to Shopping Bag
+          </button>
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={buyingNow}
+            style={{ flex: '1 1 150px', padding: '13px 18px' }}
+            onClick={handleBuyNow}
+          >
+            {buyingNow ? 'Opening Checkout...' : 'Buy Now'}
           </button>
           <button
             type="button"
@@ -237,7 +366,8 @@ export default function ProductDetailPage() {
             title={isWishlisted(product.id) ? "Saved in Wishlist" : "Save to Wishlist"}
             style={{
               padding: '0 16px',
-              borderRadius: 10,
+              minHeight: 46,
+              borderRadius: 999,
               border: isWishlisted(product.id) ? '1.5px solid #9E2A2B' : '1px solid var(--brand-gold)',
               background: isWishlisted(product.id) ? '#FDECEA' : '#FFFFFF',
               color: isWishlisted(product.id) ? '#9E2A2B' : 'var(--brand-plum)',
