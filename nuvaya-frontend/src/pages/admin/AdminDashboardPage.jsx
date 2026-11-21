@@ -1087,16 +1087,16 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label style={lbl}>Promotional Sale Banner Photo (Upload or Paste Image URL)</label>
+                <label style={lbl}>Sliding Sale Banner Photos (Paste multiple URLs separated by commas or upload multiple photos)</label>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                   <input
-                    placeholder="https://... or upload photo below"
+                    placeholder="https://nuvaya.co.in/campaigns/festive-sale-banner.png, https://..."
                     value={settings.saleBannerImageUrl || ''}
                     onChange={(e) => setSettings({ ...settings, saleBannerImageUrl: e.target.value })}
                     style={{ ...inp, flex: 1, minWidth: 220 }}
                   />
                   <label className="btn-outline" style={{ padding: '9px 14px', cursor: 'pointer', whiteSpace: 'nowrap', fontSize: '0.8rem' }}>
-                    Upload Sale Photo
+                    + Upload Slide Photo
                     <input
                       type="file"
                       accept="image/*"
@@ -1111,7 +1111,13 @@ export default function AdminDashboardPage() {
                             headers: { 'Content-Type': 'multipart/form-data' },
                           });
                           if (res.data?.url) {
-                            setSettings((prev) => ({ ...prev, saleBannerImageUrl: res.data.url }));
+                            setSettings((prev) => {
+                              const existing = (prev.saleBannerImageUrl || '').trim();
+                              return {
+                                ...prev,
+                                saleBannerImageUrl: existing ? `${existing}, ${res.data.url}` : res.data.url,
+                              };
+                            });
                           }
                         } catch {
                           alert('Could not upload sale banner photo.');
@@ -1121,12 +1127,23 @@ export default function AdminDashboardPage() {
                   </label>
                 </div>
                 {settings.saleBannerImageUrl && (
-                  <div style={{ marginTop: 10, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--brand-gold)', maxHeight: 190 }}>
-                    <img
-                      src={resolveAssetUrl(settings.saleBannerImageUrl)}
-                      alt="Sale Campaign Preview"
-                      style={{ width: '100%', height: 190, objectFit: 'cover', display: 'block' }}
-                    />
+                  <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
+                    {settings.saleBannerImageUrl
+                      .split(/[,\n]+/)
+                      .map((u) => u.trim())
+                      .filter(Boolean)
+                      .map((slideUrl, idx) => (
+                        <div key={idx} style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--brand-gold)', height: 110 }}>
+                          <img
+                            src={resolveAssetUrl(slideUrl)}
+                            alt={`Sale Slide ${idx + 1}`}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                          />
+                          <span style={{ position: 'absolute', top: 6, left: 6, background: 'rgba(35,16,25,0.85)', color: '#FAF6EE', fontSize: '0.65rem', fontWeight: 700, padding: '2px 7px', borderRadius: 999 }}>
+                            Slide {idx + 1}
+                          </span>
+                        </div>
+                      ))}
                   </div>
                 )}
               </div>

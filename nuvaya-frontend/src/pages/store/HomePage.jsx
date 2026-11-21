@@ -1,12 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, ShieldCheck, MessageCircle, ArrowRight } from 'lucide-react';
+import { Sparkles, ShieldCheck, MessageCircle, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import axiosClient, { FALLBACK_IMAGE, resolveAssetUrl } from '../../api/axiosClient';
 import ProductCard from '../../components/common/ProductCard';
 import { useCart } from '../../context/CartContext';
 
 export default function HomePage() {
   const { storeSettings } = useCart();
+  const [saleSlideIdx, setSaleSlideIdx] = useState(0);
+  const [salePaused, setSalePaused] = useState(false);
+
+  const saleSlides = React.useMemo(() => {
+    const raw = (storeSettings?.saleBannerImageUrl || '')
+      .split(/[,\n]+/)
+      .map((u) => u.trim())
+      .filter(Boolean);
+    return raw;
+  }, [storeSettings?.saleBannerImageUrl]);
+
+  useEffect(() => {
+    setSaleSlideIdx(0);
+  }, [saleSlides.length]);
+
+  useEffect(() => {
+    if (!storeSettings?.saleActive || saleSlides.length <= 1 || salePaused) return;
+    const timer = setInterval(() => {
+      setSaleSlideIdx((prev) => (prev + 1) % saleSlides.length);
+    }, 3800);
+    return () => clearInterval(timer);
+  }, [storeSettings?.saleActive, saleSlides.length, salePaused]);
   const [featured, setFeatured] = useState([]);
   const [bestsellers, setBestsellers] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -37,6 +59,204 @@ export default function HomePage() {
 
   return (
     <div>
+      {/* Top Priority Live Sale & Sliding Showcase Banner */}
+      {storeSettings?.saleActive && (
+        <section
+          onMouseEnter={() => setSalePaused(true)}
+          onMouseLeave={() => setSalePaused(false)}
+          style={{
+            background: 'linear-gradient(135deg, #1E0B14 0%, #381526 52%, #231019 100%)',
+            borderBottom: '1.5px solid var(--brand-gold)',
+            padding: '28px 20px 32px'
+          }}
+        >
+          <div style={{
+            maxWidth: 1240,
+            margin: '0 auto',
+            borderRadius: 22,
+            overflow: 'hidden',
+            background: 'rgba(255,255,255,0.03)',
+            border: '1.5px solid rgba(198,161,99,0.75)',
+            boxShadow: '0 26px 56px -14px rgba(0,0,0,0.45)',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))',
+            alignItems: 'stretch'
+          }}>
+            <div style={{ padding: '36px 34px', display: 'flex', flexDirection: 'column', justifyContent: 'center', color: '#FBF8F3' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 7,
+                  padding: '5px 13px',
+                  borderRadius: 999,
+                  background: 'rgba(198,161,99,0.22)',
+                  border: '1px solid var(--brand-gold)',
+                  color: 'var(--brand-gold)',
+                  fontSize: '0.68rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase'
+                }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ADE80', boxShadow: '0 0 8px #4ADE80' }} />
+                  {storeSettings.saleType || 'SALE IS LIVE'}
+                </span>
+
+                {storeSettings.saleBadgeText && (
+                  <span style={{
+                    padding: '5px 12px',
+                    borderRadius: 999,
+                    background: 'var(--brand-gold)',
+                    color: '#231019',
+                    fontSize: '0.68rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase'
+                  }}>
+                    {storeSettings.saleBadgeText}
+                  </span>
+                )}
+              </div>
+
+              <h2 style={{ fontSize: 'clamp(1.9rem, 3.3vw, 2.85rem)', lineHeight: 1.1, fontWeight: 600, marginBottom: 12, color: '#FAF6EE' }}>
+                {storeSettings.saleTitle || 'Exclusive Modest Fashion Offer — Live Now'}
+              </h2>
+
+              {storeSettings.saleSubtitle && (
+                <p style={{ color: '#DFD1BE', fontSize: '0.96rem', lineHeight: 1.65, maxWidth: 510, marginBottom: 24 }}>
+                  {storeSettings.saleSubtitle}
+                </p>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                <Link
+                  to={storeSettings.saleCtaLink || '/shop'}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '13px 28px',
+                    borderRadius: 999,
+                    background: 'var(--brand-gold)',
+                    color: '#231019',
+                    fontWeight: 800,
+                    fontSize: '0.8rem',
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase'
+                  }}
+                >
+                  {storeSettings.saleCtaText || 'Shop Offer Now'} <ArrowRight size={15} />
+                </Link>
+              </div>
+            </div>
+
+            {saleSlides.length > 0 && (
+              <div style={{ position: 'relative', minHeight: 300, maxHeight: 410, overflow: 'hidden', background: '#16070E' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    height: '100%',
+                    width: `${saleSlides.length * 100}%`,
+                    transform: `translateX(-${(saleSlideIdx * 100) / saleSlides.length}%)`,
+                    transition: 'transform 0.65s cubic-bezier(0.22, 1, 0.36, 1)'
+                  }}
+                >
+                  {saleSlides.map((slideUrl, i) => (
+                    <div key={i} style={{ width: `${100 / saleSlides.length}%`, height: '100%', flexShrink: 0 }}>
+                      <img
+                        src={resolveAssetUrl(slideUrl)}
+                        onError={(e) => { e.currentTarget.src = FALLBACK_IMAGE; }}
+                        alt={`${storeSettings.saleTitle || 'NuVaya Sale'} Slide ${i + 1}`}
+                        style={{ width: '100%', height: '100%', maxHeight: 410, objectFit: 'cover', display: 'block' }}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {saleSlides.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      aria-label="Previous Sale Slide"
+                      onClick={() => setSaleSlideIdx((prev) => (prev - 1 + saleSlides.length) % saleSlides.length)}
+                      style={{
+                        position: 'absolute',
+                        left: 12,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        width: 34,
+                        height: 34,
+                        borderRadius: '50%',
+                        background: 'rgba(30,11,20,0.72)',
+                        border: '1px solid var(--brand-gold)',
+                        color: '#FAF6EE',
+                        display: 'grid',
+                        placeItems: 'center',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <ChevronLeft size={18} />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Next Sale Slide"
+                      onClick={() => setSaleSlideIdx((prev) => (prev + 1) % saleSlides.length)}
+                      style={{
+                        position: 'absolute',
+                        right: 12,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        width: 34,
+                        height: 34,
+                        borderRadius: '50%',
+                        background: 'rgba(30,11,20,0.72)',
+                        border: '1px solid var(--brand-gold)',
+                        color: '#FAF6EE',
+                        display: 'grid',
+                        placeItems: 'center',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <ChevronRight size={18} />
+                    </button>
+
+                    <div style={{
+                      position: 'absolute',
+                      bottom: 12,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      display: 'flex',
+                      gap: 7,
+                      padding: '5px 10px',
+                      borderRadius: 999,
+                      background: 'rgba(30,11,20,0.68)'
+                    }}>
+                      {saleSlides.map((_, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          aria-label={`Go to slide ${idx + 1}`}
+                          onClick={() => setSaleSlideIdx(idx)}
+                          style={{
+                            width: idx === saleSlideIdx ? 20 : 8,
+                            height: 8,
+                            borderRadius: 999,
+                            border: 'none',
+                            background: idx === saleSlideIdx ? 'var(--brand-gold)' : 'rgba(255,255,255,0.45)',
+                            transition: 'all 0.3s ease',
+                            cursor: 'pointer'
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
       {/* Editorial Hero Banner */}
       <section style={{
         background: 'radial-gradient(circle at 85% 20%, rgba(198,161,99,0.18) 0%, transparent 45%), linear-gradient(135deg, #FAF5EC 0%, #EFE4D2 100%)',
@@ -117,101 +337,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Live Sale & Offer Showcase Banner (Controlled from Admin Studio) */}
-      {storeSettings?.saleActive && (
-        <section style={{ maxWidth: 1240, margin: '44px auto 12px', padding: '0 20px' }}>
-          <div style={{
-            borderRadius: 22,
-            overflow: 'hidden',
-            background: 'linear-gradient(135deg, #27101B 0%, #3E182A 55%, #1E0B14 100%)',
-            border: '1.5px solid var(--brand-gold)',
-            boxShadow: '0 24px 52px -16px rgba(39,16,27,0.32)',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            alignItems: 'stretch'
-          }}>
-            <div style={{ padding: '38px 34px', display: 'flex', flexDirection: 'column', justifyContent: 'center', color: '#FBF8F3' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
-                <span style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 7,
-                  padding: '5px 13px',
-                  borderRadius: 999,
-                  background: 'rgba(198,161,99,0.22)',
-                  border: '1px solid var(--brand-gold)',
-                  color: 'var(--brand-gold)',
-                  fontSize: '0.68rem',
-                  fontWeight: 800,
-                  letterSpacing: '0.18em',
-                  textTransform: 'uppercase'
-                }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ADE80', boxShadow: '0 0 8px #4ADE80' }} />
-                  {storeSettings.saleType || 'SALE IS LIVE'}
-                </span>
-
-                {storeSettings.saleBadgeText && (
-                  <span style={{
-                    padding: '5px 12px',
-                    borderRadius: 999,
-                    background: 'var(--brand-gold)',
-                    color: '#231019',
-                    fontSize: '0.68rem',
-                    fontWeight: 800,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase'
-                  }}>
-                    {storeSettings.saleBadgeText}
-                  </span>
-                )}
-              </div>
-
-              <h2 style={{ fontSize: 'clamp(1.85rem, 3.2vw, 2.75rem)', lineHeight: 1.12, fontWeight: 600, marginBottom: 12, color: '#FAF6EE' }}>
-                {storeSettings.saleTitle || 'Exclusive Modest Fashion Offer — Live Now'}
-              </h2>
-
-              {storeSettings.saleSubtitle && (
-                <p style={{ color: '#DFD1BE', fontSize: '0.96rem', lineHeight: 1.65, maxWidth: 500, marginBottom: 24 }}>
-                  {storeSettings.saleSubtitle}
-                </p>
-              )}
-
-              <div>
-                <Link
-                  to={storeSettings.saleCtaLink || '/shop'}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '12px 26px',
-                    borderRadius: 999,
-                    background: 'var(--brand-gold)',
-                    color: '#231019',
-                    fontWeight: 700,
-                    fontSize: '0.8rem',
-                    letterSpacing: '0.14em',
-                    textTransform: 'uppercase'
-                  }}
-                >
-                  {storeSettings.saleCtaText || 'Shop Offer Now'} <ArrowRight size={15} />
-                </Link>
-              </div>
-            </div>
-
-            {storeSettings.saleBannerImageUrl && (
-              <div style={{ position: 'relative', minHeight: 280, background: '#1E0B14' }}>
-                <img
-                  src={resolveAssetUrl(storeSettings.saleBannerImageUrl)}
-                  onError={(e) => { e.currentTarget.src = FALLBACK_IMAGE; }}
-                  alt={storeSettings.saleTitle || 'NuVaya Live Sale'}
-                  style={{ width: '100%', height: '100%', maxHeight: 390, objectFit: 'cover', display: 'block' }}
-                />
-              </div>
-            )}
-          </div>
-        </section>
-      )}
 
       {/* Curated Category Strip */}
       <section style={{ maxWidth: 1240, margin: '64px auto 48px', padding: '0 20px' }}>
