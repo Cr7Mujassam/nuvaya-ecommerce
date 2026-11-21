@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -20,11 +21,49 @@ import java.util.List;
 public class OrderEmailService {
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
 
+    @Value("${spring.mail.host:}")
+    private String mailHost;
+
+    @Value("${spring.mail.port:587}")
+    private int mailPort;
+
     @Value("${spring.mail.username:}")
     private String mailUsername;
 
     @Value("${nuvaya.admin.notification-email:modest.fashion@nuvaya.co.in}")
     private String adminNotificationEmail;
+
+    public Map<String, Object> sendTestEmail(String toAddress) {
+        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
+        if (mailSender == null || mailUsername == null || mailUsername.isBlank()) {
+            return Map.of(
+                    "sent", false,
+                    "error", "MAIL_USERNAME is empty in Render Environment Variables.",
+                    "host", mailHost,
+                    "port", mailPort
+            );
+        }
+        String target = (toAddress != null && !toAddress.isBlank()) ? toAddress.trim() : adminNotificationEmail;
+        try {
+            SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setFrom(mailUsername);
+            msg.setTo(target);
+            msg.setSubject("[NuVaya SMTP Test] Email Configuration Working");
+            msg.setText("Assalamu Alaikum,\n\nYour NUVAYA backend SMTP integration (" + mailHost + ":" + mailPort + ") is working properly.\n");
+            mailSender.send(msg);
+            return Map.of("sent", true, "from", mailUsername, "to", target, "host", mailHost, "port", mailPort);
+        } catch (Exception e) {
+            log.error("SMTP Test Email failed: {}", e.getMessage(), e);
+            return Map.of(
+                    "sent", false,
+                    "from", mailUsername,
+                    "to", target,
+                    "host", mailHost,
+                    "port", mailPort,
+                    "error", e.getClass().getSimpleName() + ": " + e.getMessage()
+            );
+        }
+    }
 
     public void sendOrderAlert(Order order, String eventTitle) {
         String ref = order.getOrderReference();
@@ -51,16 +90,15 @@ public class OrderEmailService {
             }
         }
 
-        dispatchEmailsAsync(ref, status, payMethod, payStatus, rzpPayId, trackingId, courierPartner,
+        dispatchEmails(ref, status, payMethod, payStatus, rzpPayId, trackingId, courierPartner,
                 custName, custMobile, custEmail, address, notes, total, itemLines, eventTitle);
     }
 
-    @Async
-    protected void dispatchEmailsAsync(String ref, String status, String payMethod, String payStatus,
-                                       String rzpPayId, String trackingId, String courierPartner,
-                                       String custName, String custMobile, String custEmail,
-                                       String address, String notes, String total,
-                                       List<String> itemLines, String eventTitle) {
+    private void dispatchEmails(String ref, String status, String payMethod, String payStatus,
+                                String rzpPayId, String trackingId, String courierPartner,
+                                String custName, String custMobile, String custEmail,
+                                String address, String notes, String total,
+                                List<String> itemLines, String eventTitle) {
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
         if (mailSender == null || mailUsername == null || mailUsername.isBlank()) {
             log.warn("SMTP credentials missing (MAIL_USERNAME is empty); order emails skipped for {}", ref);

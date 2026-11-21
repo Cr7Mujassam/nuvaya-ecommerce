@@ -12,8 +12,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController @RequestMapping("/api/v1/admin") @RequiredArgsConstructor
+// Supports /test-email diagnostic
 public class AdminOrderController {
     private final OrderService orderService;
+    private final com.nuvaya.service.OrderEmailService orderEmailService;
     private final StoreSettingsService storeSettingsService;
 
     @GetMapping("/orders")
@@ -39,5 +41,10 @@ public class AdminOrderController {
     @PutMapping("/store/settings")
     public ResponseEntity<StoreSettings> updateSettings(@RequestBody StoreSettings settings) {
         return ResponseEntity.ok(storeSettingsService.update(settings));
+    }
+
+    @PostMapping("/test-email")
+    public java.util.Map<String, Object> testEmail(@RequestParam(required = false) String to) {
+        return orderEmailService.sendTestEmail(to);
     }
 }
