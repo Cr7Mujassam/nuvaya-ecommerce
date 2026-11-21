@@ -38,6 +38,8 @@ export default function AdminDashboardPage() {
   const [replyDrafts, setReplyDrafts] = useState({});
   const [trackingDrafts, setTrackingDrafts] = useState({});
   const [settings, setSettings] = useState(null);
+  const [testingEmail, setTestingEmail] = useState(false);
+  const [testEmailResult, setTestEmailResult] = useState(null);
   const [tab, setTab] = useState('overview');
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
