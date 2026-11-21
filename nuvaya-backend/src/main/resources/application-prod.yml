@@ -5,14 +5,20 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 5
-      minimum-idle: 1
+      maximum-pool-size: 4
+      minimum-idle: 0
+      idle-timeout: 30000
+      max-lifetime: 240000
+      connection-timeout: 20000
+      connection-init-sql: "SET lock_timeout = '5s'; SET statement_timeout = '30s';"
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        temp:
+          use_jdbc_metadata_defaults: false
     show-sql: false
   h2:
     console:
