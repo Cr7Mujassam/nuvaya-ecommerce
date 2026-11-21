@@ -259,6 +259,56 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleToggleProductStatus = async (product) => {
+    const nextStatus = product.status === 'ACTIVE' ? 'DRAFT' : 'ACTIVE';
+    const matchedCat =
+      categories.find((c) => c.id === product.categoryId || c.name === product.categoryName)?.id ||
+      categories[0]?.id;
+
+    try {
+      await axiosClient.put(`/admin/products/${product.id}`, {
+        name: product.name,
+        sku: product.sku,
+        categoryId: Number(matchedCat),
+        fabric: product.fabric || '',
+        description: product.description || '',
+        specifications: product.specifications || '',
+        availableSizes: product.availableSizes?.length ? product.availableSizes : ['Standard'],
+        basePrice: Number(product.basePrice),
+        discountPrice: product.discountPrice ? Number(product.discountPrice) : null,
+        stockQuantity: Number(product.stockQuantity ?? 0),
+        status: nextStatus,
+        featured: Boolean(product.featured),
+        newArrival: Boolean(product.newArrival),
+        bestSeller: Boolean(product.bestSeller),
+        deliveryChargeType: product.deliveryChargeType || 'FREE',
+        deliveryChargeAmount: Number(product.deliveryChargeAmount || 0),
+        colors: (product.colors || []).map((c) => ({
+          name: c.name,
+          hexCode: c.hexCode || '#191817',
+          inStock: c.inStock ?? true,
+        })),
+        images: (product.images || []).map((im, idx) => ({
+          imageUrl: im.imageUrl,
+          colorName: im.colorName || '',
+          primaryImage: idx === 0 ? true : Boolean(im.primaryImage),
+        })),
+        packs: (product.packs || []).map((pk) => ({
+          packName: pk.packName,
+          pieceCount: Number(pk.pieceCount),
+          packPrice: Number(pk.packPrice),
+          discountPrice: pk.discountPrice ? Number(pk.discountPrice) : null,
+          packDeliveryCharge: Number(pk.packDeliveryCharge || 0),
+          allowMixedColors: Boolean(pk.allowMixedColors),
+          stockQuantity: Number(pk.stockQuantity || 50),
+        })),
+      });
+      await loadAll();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Could not update product status.');
+    }
+  };
+
   const handleDeleteProduct = async (id, name) => {
     if (!window.confirm(`Delete "${name}" from NuVaya catalog?`)) return;
     if (editingProductId === id) {
@@ -685,10 +735,33 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
                     </div>
-                    <div style={{ padding: '10px 14px', background: 'var(--bg-cream)', borderTop: '1px solid var(--border-sand)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: '0.76rem', color: 'var(--brand-plum)', fontWeight: 600 }}>
-                        {p.packs?.length ? `${p.packs.length} Bundle Options` : 'Single Item'}
-                      </span>
+                    <div style={{ padding: '10px 14px', background: 'var(--bg-cream)', borderTop: '1px solid var(--border-sand)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleProductStatus(p)}
+                        title={p.status === 'ACTIVE' ? 'Click to set Inactive (hide from store)' : 'Click to set Active (show on store)'}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '5px 11px',
+                          borderRadius: 999,
+                          fontSize: '0.74rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          border: p.status === 'ACTIVE' ? '1px solid #A8DAB5' : '1px solid #E5B5B5',
+                          background: p.status === 'ACTIVE' ? '#E6F4EA' : '#FDECEA',
+                          color: p.status === 'ACTIVE' ? '#1E6F50' : '#9E2A2B',
+                        }}
+                      >
+                        <span style={{
+                          width: 7,
+                          height: 7,
+                          borderRadius: '50%',
+                          background: p.status === 'ACTIVE' ? '#1E6F50' : '#9E2A2B'
+                        }} />
+                        {p.status === 'ACTIVE' ? 'Active' : 'Inactive'}
+                      </button>
                       <div style={{ display: 'flex', gap: 8 }}>
                         <button
                           type="button"
