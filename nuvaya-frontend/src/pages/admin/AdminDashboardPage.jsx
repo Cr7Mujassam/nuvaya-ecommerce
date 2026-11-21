@@ -832,7 +832,7 @@ export default function AdminDashboardPage() {
                     <span style={statusPill(o.status)}>{o.status}</span>
                     {o.paymentMethod && <span style={{ fontSize: '0.68rem', fontWeight: 800, padding: '3px 9px', borderRadius: 999, background: o.paymentStatus === 'PAID' ? '#E6F4EA' : '#FFF4E5', color: o.paymentStatus === 'PAID' ? '#1E6F50' : '#9A5B13' }}>{o.paymentMethod} • {o.paymentStatus || 'PENDING'}</span>}
                   </div>
-                  <div style={{ fontWeight: 600, marginTop: 4 }}>{o.customerName} • {o.customerMobile}{o.customerEmail ? ` • ${o.customerEmail}` : ''}</div>
+                  <div style={{ fontWeight: 600, marginTop: 4 }}>{o.customerName} • <a href={`https://wa.me/91${String(o.customerMobile || "").replace(/\D/g, "").slice(-10)}?text=${encodeURIComponent(`Assalamu Alaikum ${o.customerName}, your NUVAYA order *${o.orderReference}* status is *${o.status}*.${o.trackingId ? ` Tracking AWB: ${o.trackingId}` : ""} Track live: https://nuvaya.co.in/track-order?ref=${o.orderReference}`)}`} target="_blank" rel="noreferrer" style={{ color: "#1E6F50", fontWeight: 600, textDecoration: "underline" }} title="Send Free WhatsApp Status Update">{o.customerMobile} (WhatsApp)</a>{o.customerEmail ? ` • ${o.customerEmail}` : ''}</div>
                   <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{o.deliveryAddress}, {o.city}, {o.state} - {o.pinCode}</div>
                   <div style={{ fontSize: '0.86rem', marginTop: 8, color: 'var(--brand-plum)' }}>
                     {o.items.map((it, idx) => (
