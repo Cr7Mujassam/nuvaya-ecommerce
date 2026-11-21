@@ -2,6 +2,17 @@ server:
   port: ${PORT:8083}
 
 spring:
+  mail:
+    host: ${MAIL_HOST:smtp.zoho.in}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
   application:
     name: nuvaya-backend
   datasource:
@@ -24,6 +35,8 @@ spring:
       max-request-size: 25MB
 
 nuvaya:
+  admin:
+    notification-email: ${ADMIN_NOTIFICATION_EMAIL:modest.fashion@nuvaya.co.in}
   jwt:
     secret: ${JWT_SECRET:NuvayaModestFashionSuperSecretKey2026HyderabadIndiaMinimum32Chars!}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}

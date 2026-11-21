@@ -1,4 +1,15 @@
 spring:
+  mail:
+    host: ${MAIL_HOST:smtp.zoho.in}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
@@ -25,18 +36,6 @@ spring:
     console:
       enabled: false
 
-spring:
-  mail:
-    host: ${MAIL_HOST:smtp.zoho.in}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
 nuvaya:
   admin:
     notification-email: ${ADMIN_NOTIFICATION_EMAIL:modest.fashion@nuvaya.co.in}
