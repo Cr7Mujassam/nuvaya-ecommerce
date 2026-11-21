@@ -30,13 +30,21 @@ public class StoreSettings {
     @Column(nullable = false, precision = 10, scale = 2) @Builder.Default
     private BigDecimal freeDeliveryThreshold = new BigDecimal("1499.00");
 
-    // Payment & COD Configuration
-    @Column(nullable = false) @Builder.Default
-    private boolean codEnabled = true;
-    @Column(nullable = false, precision = 10, scale = 2) @Builder.Default
+    // Payment & COD Configuration (wrapper types prevent Hibernate NULL-to-primitive crashes)
+    @Column(name = "cod_enabled") @Builder.Default
+    private Boolean codEnabled = true;
+    @Column(name = "cod_handling_fee", precision = 10, scale = 2) @Builder.Default
     private BigDecimal codHandlingFee = BigDecimal.ZERO;
-    @Column(nullable = false) @Builder.Default
-    private boolean onlinePaymentEnabled = true;
+    @Column(name = "online_payment_enabled") @Builder.Default
+    private Boolean onlinePaymentEnabled = true;
+
+    public boolean isCodEnabled() {
+        return codEnabled == null || codEnabled;
+    }
+
+    public boolean isOnlinePaymentEnabled() {
+        return onlinePaymentEnabled == null || onlinePaymentEnabled;
+    }
 
     // Live Sale & Offer Campaign Fields
     @Column(nullable = false) @Builder.Default
