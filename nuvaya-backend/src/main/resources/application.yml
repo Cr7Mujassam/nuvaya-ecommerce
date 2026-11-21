@@ -35,8 +35,6 @@ spring:
       max-request-size: 25MB
 
 nuvaya:
-  admin:
-    notification-email: ${ADMIN_NOTIFICATION_EMAIL:modest.fashion@nuvaya.co.in}
   jwt:
     secret: ${JWT_SECRET:NuvayaModestFashionSuperSecretKey2026HyderabadIndiaMinimum32Chars!}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
