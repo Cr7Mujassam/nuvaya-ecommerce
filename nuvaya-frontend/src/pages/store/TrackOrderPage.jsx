@@ -56,13 +56,14 @@ export default function TrackOrderPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const normalizedStatus = trackingData?.status === 'PROCESSING' ? 'PACKED' : trackingData?.status;
+  const rawStatus = (trackingData?.status || '').toUpperCase();
+  const normalizedStatus = rawStatus === 'PROCESSING' ? 'PACKED' : rawStatus;
   const currentStepIndex = trackingData
     ? STEPS.findIndex((s) => s.key === normalizedStatus)
     : -1;
 
   return (
-    <div style={{ maxWidth: 840, margin: '48px auto 80px', padding: '0 20px' }}>
+    <div style={{ maxWidth: 860, margin: '48px auto 80px', padding: '0 20px' }}>
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
         <span style={{ fontSize: '0.72rem', letterSpacing: '0.24em', color: 'var(--brand-gold-dark)', fontWeight: 700, textTransform: 'uppercase' }}>
           NuVaya Concierge Dispatch
@@ -113,7 +114,6 @@ export default function TrackOrderPage() {
 
       {trackingData && (
         <div style={{ background: '#FFFFFF', borderRadius: 20, border: '1px solid var(--border-sand)', overflow: 'hidden', boxShadow: '0 20px 48px rgba(39,16,27,0.08)' }}>
-          {/* Top Header */}
           <div style={{ background: 'linear-gradient(135deg, #231019 0%, #3A1728 100%)', color: '#FAF6EE', padding: '24px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
             <div>
               <div style={{ fontSize: '0.7rem', letterSpacing: '0.18em', color: 'var(--brand-gold)', textTransform: 'uppercase', fontWeight: 700 }}>
@@ -129,13 +129,13 @@ export default function TrackOrderPage() {
                 display: 'inline-block',
                 padding: '6px 14px',
                 borderRadius: 999,
-                background: trackingData.status === 'CANCELLED' ? '#9E2A2B' : 'var(--brand-gold)',
-                color: trackingData.status === 'CANCELLED' ? '#FFF' : '#231019',
+                background: rawStatus === 'CANCELLED' ? '#9E2A2B' : 'var(--brand-gold)',
+                color: rawStatus === 'CANCELLED' ? '#FFF' : '#231019',
                 fontWeight: 800,
                 fontSize: '0.75rem',
                 letterSpacing: '0.12em'
               }}>
-                {trackingData.status}
+                {rawStatus}
               </span>
               <div style={{ fontSize: '0.85rem', color: '#DFD1BE', marginTop: 6 }}>
                 Total: ₹{Number(trackingData.finalAmount).toLocaleString('en-IN')}
@@ -144,7 +144,6 @@ export default function TrackOrderPage() {
           </div>
 
           <div style={{ padding: '28px' }}>
-            {/* NimbusPost Tracking Card */}
             <div style={{
               background: 'var(--bg-cream)',
               border: '1.5px solid var(--brand-gold)',
@@ -183,7 +182,7 @@ export default function TrackOrderPage() {
                   </>
                 ) : (
                   <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: 6 }}>
-                    {trackingData.status === 'PENDING'
+                    {rawStatus === 'PENDING'
                       ? 'Your order is currently awaiting confirmation on WhatsApp. Once confirmed & dispatched, your NimbusPost AWB Tracking ID will appear right here.'
                       : 'Your order is confirmed! Our team is preparing your parcel and will update your NimbusPost AWB Tracking ID shortly.'}
                   </p>
@@ -203,30 +202,59 @@ export default function TrackOrderPage() {
               )}
             </div>
 
-            {/* Step-by-Step Progress Bar */}
-            {trackingData.status !== 'CANCELLED' && (
+            {rawStatus !== 'CANCELLED' && (
               <div style={{ marginBottom: 28 }}>
                 <h3 style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--brand-gold-dark)', marginBottom: 16 }}>
                   Order Journey
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
                   {STEPS.map((step, idx) => {
                     const Icon = step.icon;
-                    const completed = idx <= currentStepIndex;
+                    const completed = currentStepIndex >= idx;
+                    const isCurrent = currentStepIndex === idx;
                     return (
                       <div
                         key={step.key}
                         style={{
-                          padding: 14,
-                          borderRadius: 12,
-                          border: completed ? '1.5px solid var(--brand-gold)' : '1px solid var(--border-sand)',
-                          background: completed ? 'rgba(198,161,99,0.1)' : '#FAFAFA',
-                          opacity: completed ? 1 : 0.55
+                          padding: 15,
+                          borderRadius: 14,
+                          border: isCurrent
+                            ? '2px solid var(--brand-gold)'
+                            : completed
+                              ? '1.5px solid #2F1422'
+                              : '1px solid var(--border-sand)',
+                          background: completed
+                            ? 'linear-gradient(145deg, #231019 0%, #3A1728 100%)'
+                            : '#FAFAFA',
+                          color: completed ? '#FAF6EE' : 'var(--text-muted)',
+                          boxShadow: isCurrent ? '0 10px 24px rgba(35,16,25,0.22)' : 'none',
+                          opacity: completed ? 1 : 0.55,
+                          transition: 'all 0.25s ease'
                         }}
                       >
-                        <Icon size={18} color={completed ? 'var(--brand-plum)' : 'var(--text-muted)'} />
-                        <div style={{ fontWeight: 700, fontSize: '0.86rem', color: 'var(--brand-plum)', marginTop: 8 }}>{step.label}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.4 }}>{step.desc}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <Icon size={19} color={completed ? 'var(--brand-gold)' : 'var(--text-muted)'} />
+                          {completed && (
+                            <span style={{
+                              fontSize: '0.62rem',
+                              fontWeight: 800,
+                              letterSpacing: '0.08em',
+                              textTransform: 'uppercase',
+                              padding: '2px 7px',
+                              borderRadius: 999,
+                              background: isCurrent ? 'var(--brand-gold)' : 'rgba(198,161,99,0.22)',
+                              color: isCurrent ? '#231019' : 'var(--brand-gold)'
+                            }}>
+                              {isCurrent ? 'Current' : 'Done'}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontWeight: 700, fontSize: '0.9rem', color: completed ? '#FFFFFF' : 'var(--brand-plum)', marginTop: 10 }}>
+                          {step.label}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: completed ? '#DFD1BE' : 'var(--text-muted)', marginTop: 4, lineHeight: 1.4 }}>
+                          {step.desc}
+                        </div>
                       </div>
                     );
                   })}
@@ -234,7 +262,6 @@ export default function TrackOrderPage() {
               </div>
             )}
 
-            {/* Items Summary */}
             <div>
               <h3 style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--brand-gold-dark)', marginBottom: 10 }}>
                 Items in This Order
