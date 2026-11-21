@@ -28,6 +28,15 @@ public class StoreSettingsService {
         existing.setDefaultDeliveryCharge(updated.getDefaultDeliveryCharge());
         existing.setFreeDeliveryThresholdEnabled(updated.isFreeDeliveryThresholdEnabled());
         existing.setFreeDeliveryThreshold(updated.getFreeDeliveryThreshold());
+
+        existing.setSaleActive(updated.isSaleActive());
+        existing.setSaleType(updated.getSaleType());
+        existing.setSaleBadgeText(updated.getSaleBadgeText());
+        existing.setSaleTitle(updated.getSaleTitle());
+        existing.setSaleSubtitle(updated.getSaleSubtitle());
+        existing.setSaleBannerImageUrl(updated.getSaleBannerImageUrl());
+        existing.setSaleCtaText(updated.getSaleCtaText());
+        existing.setSaleCtaLink(updated.getSaleCtaLink());
         return repository.save(existing);
     }
 }

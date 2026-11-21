@@ -29,4 +29,22 @@ public class StoreSettings {
     private boolean freeDeliveryThresholdEnabled = true;
     @Column(nullable = false, precision = 10, scale = 2) @Builder.Default
     private BigDecimal freeDeliveryThreshold = new BigDecimal("1499.00");
+
+    // Live Sale & Offer Campaign Fields
+    @Column(nullable = false) @Builder.Default
+    private boolean saleActive = false;
+    @Column(length = 80)
+    private String saleType;
+    @Column(length = 80)
+    private String saleBadgeText;
+    @Column(length = 180)
+    private String saleTitle;
+    @Column(length = 400)
+    private String saleSubtitle;
+    @Column(length = 500)
+    private String saleBannerImageUrl;
+    @Column(length = 80)
+    private String saleCtaText;
+    @Column(length = 200)
+    private String saleCtaLink;
 }

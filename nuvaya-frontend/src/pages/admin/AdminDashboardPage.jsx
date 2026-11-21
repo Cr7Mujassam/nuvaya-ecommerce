@@ -980,6 +980,158 @@ export default function AdminDashboardPage() {
               <label style={lbl}>Top Announcement Banner</label>
               <input value={settings.announcementText || ''} onChange={(e) => setSettings({ ...settings, announcementText: e.target.value })} style={inp} />
             </div>
+            <div style={{ marginTop: 10, padding: 20, borderRadius: 14, background: 'linear-gradient(135deg, #FAF5EC 0%, #F3E8D6 100%)', border: '1.5px solid var(--brand-gold)', display: 'grid', gap: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                <div>
+                  <div style={{ fontSize: '0.68rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--brand-gold-dark)', fontWeight: 700 }}>
+                    STOREFRONT PROMOTION CAMPAIGN
+                  </div>
+                  <h3 style={{ fontSize: '1.35rem', color: 'var(--brand-plum)' }}>Live Sale &amp; Offer Banner</h3>
+                </div>
+
+                <label style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '7px 14px',
+                  borderRadius: 999,
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  background: settings.saleActive ? '#1E6F50' : '#FFFFFF',
+                  color: settings.saleActive ? '#FFFFFF' : 'var(--brand-plum)',
+                  border: settings.saleActive ? '1px solid #1E6F50' : '1px solid var(--border-sand)'
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(settings.saleActive)}
+                    onChange={(e) => setSettings({ ...settings, saleActive: e.target.checked })}
+                    style={{ accentColor: '#1E6F50' }}
+                  />
+                  {settings.saleActive ? 'SALE IS LIVE ON STORE' : 'Sale Hidden (Click to Go Live)'}
+                </label>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={lbl}>Sale Type (Preset or Custom)</label>
+                  <input
+                    list="nuvaya-sale-types"
+                    placeholder="e.g. EID FESTIVE SALE • LIVE NOW"
+                    value={settings.saleType || ''}
+                    onChange={(e) => setSettings({ ...settings, saleType: e.target.value })}
+                    style={inp}
+                  />
+                  <datalist id="nuvaya-sale-types">
+                    <option value="SALE IS LIVE • LIMITED TIME" />
+                    <option value="EID & FESTIVE SALE LIVE" />
+                    <option value="BUNDLE BONANZA • PACK OF 3 & 5" />
+                    <option value="WEEKEND FLASH OFFER" />
+                    <option value="NEW SEASON LAUNCH OFFER" />
+                  </datalist>
+                </div>
+                <div>
+                  <label style={lbl}>Discount / Offer Pill Badge</label>
+                  <input
+                    placeholder="e.g. FLAT 30% OFF + FREE SHIPPING"
+                    value={settings.saleBadgeText || ''}
+                    onChange={(e) => setSettings({ ...settings, saleBadgeText: e.target.value })}
+                    style={inp}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={lbl}>Sale Main Headline</label>
+                <input
+                  placeholder="e.g. Curated Hijab Bundles &amp; Korean Nidha Abayas at Festive Prices"
+                  value={settings.saleTitle || ''}
+                  onChange={(e) => setSettings({ ...settings, saleTitle: e.target.value })}
+                  style={inp}
+                />
+              </div>
+
+              <div>
+                <label style={lbl}>Sale Description / Offer Details</label>
+                <input
+                  placeholder="e.g. Mix &amp; match your favorite everyday chiffon and jersey shades. Limited stock available."
+                  value={settings.saleSubtitle || ''}
+                  onChange={(e) => setSettings({ ...settings, saleSubtitle: e.target.value })}
+                  style={inp}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={lbl}>Button Label</label>
+                  <input
+                    placeholder="e.g. Shop Sale Edit"
+                    value={settings.saleCtaText || ''}
+                    onChange={(e) => setSettings({ ...settings, saleCtaText: e.target.value })}
+                    style={inp}
+                  />
+                </div>
+                <div>
+                  <label style={lbl}>Button Destination Link</label>
+                  <select
+                    value={settings.saleCtaLink || '/shop'}
+                    onChange={(e) => setSettings({ ...settings, saleCtaLink: e.target.value })}
+                    style={inp}
+                  >
+                    <option value="/shop">Entire Catalog (/shop)</option>
+                    <option value="/shop?category=best-sellers">Value Packs &amp; Best Sellers</option>
+                    <option value="/shop?category=hijabs">All Hijabs Collection</option>
+                    <option value="/shop?category=premium-abayas">Premium Abayas Collection</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label style={lbl}>Promotional Sale Banner Photo (Upload or Paste Image URL)</label>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <input
+                    placeholder="https://... or upload photo below"
+                    value={settings.saleBannerImageUrl || ''}
+                    onChange={(e) => setSettings({ ...settings, saleBannerImageUrl: e.target.value })}
+                    style={{ ...inp, flex: 1, minWidth: 220 }}
+                  />
+                  <label className="btn-outline" style={{ padding: '9px 14px', cursor: 'pointer', whiteSpace: 'nowrap', fontSize: '0.8rem' }}>
+                    Upload Sale Photo
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const fd = new FormData();
+                        fd.append('file', file);
+                        try {
+                          const res = await axiosClient.post('/admin/media/upload', fd, {
+                            headers: { 'Content-Type': 'multipart/form-data' },
+                          });
+                          if (res.data?.url) {
+                            setSettings((prev) => ({ ...prev, saleBannerImageUrl: res.data.url }));
+                          }
+                        } catch {
+                          alert('Could not upload sale banner photo.');
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+                {settings.saleBannerImageUrl && (
+                  <div style={{ marginTop: 10, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--brand-gold)', maxHeight: 190 }}>
+                    <img
+                      src={resolveAssetUrl(settings.saleBannerImageUrl)}
+                      alt="Sale Campaign Preview"
+                      style={{ width: '100%', height: 190, objectFit: 'cover', display: 'block' }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
             <button type="submit" className="btn-primary" style={{ justifySelf: 'start', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               <CheckCircle2 size={16} /> Save Store & Footer Details
             </button>

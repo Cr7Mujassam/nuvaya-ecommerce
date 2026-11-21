@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { Sparkles, ShieldCheck, MessageCircle, ArrowRight } from 'lucide-react';
 import axiosClient, { FALLBACK_IMAGE, resolveAssetUrl } from '../../api/axiosClient';
 import ProductCard from '../../components/common/ProductCard';
+import { useCart } from '../../context/CartContext';
 
 export default function HomePage() {
+  const { storeSettings } = useCart();
   const [featured, setFeatured] = useState([]);
   const [bestsellers, setBestsellers] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -115,6 +117,101 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Live Sale & Offer Showcase Banner (Controlled from Admin Studio) */}
+      {storeSettings?.saleActive && (
+        <section style={{ maxWidth: 1240, margin: '44px auto 12px', padding: '0 20px' }}>
+          <div style={{
+            borderRadius: 22,
+            overflow: 'hidden',
+            background: 'linear-gradient(135deg, #27101B 0%, #3E182A 55%, #1E0B14 100%)',
+            border: '1.5px solid var(--brand-gold)',
+            boxShadow: '0 24px 52px -16px rgba(39,16,27,0.32)',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            alignItems: 'stretch'
+          }}>
+            <div style={{ padding: '38px 34px', display: 'flex', flexDirection: 'column', justifyContent: 'center', color: '#FBF8F3' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 7,
+                  padding: '5px 13px',
+                  borderRadius: 999,
+                  background: 'rgba(198,161,99,0.22)',
+                  border: '1px solid var(--brand-gold)',
+                  color: 'var(--brand-gold)',
+                  fontSize: '0.68rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase'
+                }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ADE80', boxShadow: '0 0 8px #4ADE80' }} />
+                  {storeSettings.saleType || 'SALE IS LIVE'}
+                </span>
+
+                {storeSettings.saleBadgeText && (
+                  <span style={{
+                    padding: '5px 12px',
+                    borderRadius: 999,
+                    background: 'var(--brand-gold)',
+                    color: '#231019',
+                    fontSize: '0.68rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase'
+                  }}>
+                    {storeSettings.saleBadgeText}
+                  </span>
+                )}
+              </div>
+
+              <h2 style={{ fontSize: 'clamp(1.85rem, 3.2vw, 2.75rem)', lineHeight: 1.12, fontWeight: 600, marginBottom: 12, color: '#FAF6EE' }}>
+                {storeSettings.saleTitle || 'Exclusive Modest Fashion Offer — Live Now'}
+              </h2>
+
+              {storeSettings.saleSubtitle && (
+                <p style={{ color: '#DFD1BE', fontSize: '0.96rem', lineHeight: 1.65, maxWidth: 500, marginBottom: 24 }}>
+                  {storeSettings.saleSubtitle}
+                </p>
+              )}
+
+              <div>
+                <Link
+                  to={storeSettings.saleCtaLink || '/shop'}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '12px 26px',
+                    borderRadius: 999,
+                    background: 'var(--brand-gold)',
+                    color: '#231019',
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase'
+                  }}
+                >
+                  {storeSettings.saleCtaText || 'Shop Offer Now'} <ArrowRight size={15} />
+                </Link>
+              </div>
+            </div>
+
+            {storeSettings.saleBannerImageUrl && (
+              <div style={{ position: 'relative', minHeight: 280, background: '#1E0B14' }}>
+                <img
+                  src={resolveAssetUrl(storeSettings.saleBannerImageUrl)}
+                  onError={(e) => { e.currentTarget.src = FALLBACK_IMAGE; }}
+                  alt={storeSettings.saleTitle || 'NuVaya Live Sale'}
+                  style={{ width: '100%', height: '100%', maxHeight: 390, objectFit: 'cover', display: 'block' }}
+                />
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Curated Category Strip */}
       <section style={{ maxWidth: 1240, margin: '64px auto 48px', padding: '0 20px' }}>
