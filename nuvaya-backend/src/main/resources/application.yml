@@ -12,7 +12,12 @@ spring:
         smtp:
           auth: true
           starttls:
-            enable: true
+            enable: ${MAIL_STARTTLS:false}
+          ssl:
+            enable: ${MAIL_SSL:true}
+          socketFactory:
+            port: ${MAIL_PORT:465}
+            class: javax.net.ssl.SSLSocketFactory
           connectiontimeout: 8000
           timeout: 8000
           writetimeout: 8000
