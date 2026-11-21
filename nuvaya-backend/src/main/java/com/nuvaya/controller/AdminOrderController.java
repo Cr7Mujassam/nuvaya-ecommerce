@@ -30,6 +30,12 @@ public class AdminOrderController {
         return ResponseEntity.ok(orderService.getOrderById(id));
     }
 
+    @DeleteMapping("/orders/{id}")
+    public ResponseEntity> delete(@PathVariable Long id) {
+        orderService.deleteOrder(id);
+        return ResponseEntity.ok(Map.of("message", "Order deleted successfully"));
+    }
+
     @PutMapping("/orders/{id}/status")
     public ResponseEntity<OrderResponse> updateStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
         OrderStatus st = body.get("status") != null && !body.get("status").isBlank()

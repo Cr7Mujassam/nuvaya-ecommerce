@@ -322,6 +322,16 @@ export default function AdminDashboardPage() {
     loadAll();
   };
 
+  const deleteOrder = async (orderId, ref) => {
+    if (!window.confirm(`Permanently delete order ${ref}? This cannot be undone.`)) return;
+    try {
+      await axiosClient.delete(`/admin/orders/${orderId}`);
+      setOrders((prev) => prev.filter((item) => item.id !== orderId));
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to delete order");
+    }
+  };
+
   const updateOrderStatus = async (id, status, trackingId, courierPartner) => {
     await axiosClient.put(`/admin/orders/${id}/status`, {
       status,
@@ -847,6 +857,22 @@ export default function AdminDashboardPage() {
                       <option key={st} value={st}>{st}</option>
                     ))}
                   </select>
+                  <button
+                    type="button"
+                    onClick={() => deleteOrder(o.id, o.orderReference)}
+                    style={{
+                      padding: "6px 10px",
+                      borderRadius: 8,
+                      border: "1px solid #F5C2C7",
+                      background: o.status === "CANCELLED" ? "#FDECEA" : "#FFF",
+                      color: "#842029",
+                      fontSize: "0.78rem",
+                      fontWeight: 700,
+                      cursor: "pointer"
+                    }}
+                  >
+                    Delete Order
+                  </button>
                   <div style={{ background: 'var(--bg-cream)', padding: 10, borderRadius: 10, border: '1px solid var(--border-sand)', display: 'grid', gap: 6, textAlign: 'left' }}>
                     <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--brand-gold-dark)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                       NimbusPost Shipment Tracking

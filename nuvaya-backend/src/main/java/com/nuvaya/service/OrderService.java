@@ -182,4 +182,11 @@ public class OrderService {
     public List<OrderResponse> getRecentOrders() {
         return orderRepository.findTop8ByOrderByCreatedAtDesc().stream().map(orderMapper::toResponse).toList();
     }
+
+    @Transactional
+    public void deleteOrder(Long id) {
+        Order o = orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + id));
+        orderRepository.delete(o);
+    }
 }
