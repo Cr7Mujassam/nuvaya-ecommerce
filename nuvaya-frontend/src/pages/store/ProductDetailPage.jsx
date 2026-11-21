@@ -125,12 +125,16 @@ export default function ProductDetailPage() {
           <div
             ref={galleryRef}
             onScroll={handleGalleryScroll}
+            className="no-scrollbar"
             style={{
               display: 'flex',
               overflowX: 'auto',
               scrollSnapType: 'x mandatory',
               scrollBehavior: 'smooth',
               WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none',
+              aspectRatio: '4 / 5',
+              maxHeight: 580,
             }}
           >
             {(images.length ? images : [{ imageUrl: '' }]).map((img, idx) => (
@@ -151,9 +155,9 @@ export default function ProductDetailPage() {
                   alt={img.colorName ? `${product.name} - ${img.colorName}` : `${product.name} ${idx + 1}`}
                   style={{
                     width: '100%',
-                    height: 'auto',
-                    maxHeight: 520,
-                    objectFit: 'contain',
+                    height: '100%',
+                    objectFit: 'cover',
+                    objectPosition: 'center top',
                     display: 'block',
                   }}
                 />
