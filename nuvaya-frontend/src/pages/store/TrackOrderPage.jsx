@@ -6,7 +6,7 @@ import axiosClient from '../../api/axiosClient';
 const STEPS = [
   { key: 'PENDING', label: 'Order Placed', desc: 'Awaiting WhatsApp verification', icon: Clock },
   { key: 'CONFIRMED', label: 'Confirmed', desc: 'Order verified by NuVaya Atelier', icon: CheckCircle2 },
-  { key: 'PROCESSING', label: 'Packed', desc: 'Quality checked & packed for dispatch', icon: PackageCheck },
+  { key: 'PACKED', label: 'Packed', desc: 'Quality checked & packed for dispatch', icon: PackageCheck },
   { key: 'SHIPPED', label: 'Shipped', desc: 'Handed over to courier partner', icon: Truck },
   { key: 'DELIVERED', label: 'Delivered', desc: 'Delivered to your doorstep', icon: CheckCircle2 },
 ];
@@ -56,8 +56,9 @@ export default function TrackOrderPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const normalizedStatus = trackingData?.status === 'PROCESSING' ? 'PACKED' : trackingData?.status;
   const currentStepIndex = trackingData
-    ? STEPS.findIndex((s) => s.key === trackingData.status)
+    ? STEPS.findIndex((s) => s.key === normalizedStatus)
     : -1;
 
   return (

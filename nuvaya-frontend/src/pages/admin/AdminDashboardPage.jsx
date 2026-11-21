@@ -840,7 +840,7 @@ export default function AdminDashboardPage() {
                 <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 10, minWidth: 250 }}>
                   <div style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--brand-plum)' }}>₹{Number(o.finalAmount).toLocaleString('en-IN')}</div>
                   <select value={o.status} onChange={(e) => updateOrderStatus(o.id, e.target.value)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--brand-gold)', fontWeight: 600 }}>
-                    {['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map((st) => (
+                    {['PENDING', 'CONFIRMED', 'PACKED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map((st) => (
                       <option key={st} value={st}>{st}</option>
                     ))}
                   </select>
