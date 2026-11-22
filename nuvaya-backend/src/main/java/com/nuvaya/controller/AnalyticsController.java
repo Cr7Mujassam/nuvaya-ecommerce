@@ -20,8 +20,8 @@ public class AnalyticsController {
     private static final ZoneId IST = ZoneId.of("Asia/Kolkata");
 
     @PostMapping("/store/track")
-    public ResponseEntity> trackVisit(@RequestBody(required = false) Map<String, String> body,
-                                                          HttpServletRequest request) {
+    public ResponseEntity<?> trackVisit(@RequestBody(required = false) Map<String, String> body,
+                                        HttpServletRequest request) {
         String path = body != null ? body.getOrDefault("path", "/") : "/";
         if (path.length() > 250) path = path.substring(0, 250);
         if (path.startsWith("/admin")) {
@@ -49,7 +49,7 @@ public class AnalyticsController {
     }
 
     @GetMapping("/admin/analytics")
-    public ResponseEntity> getAnalytics() {
+    public ResponseEntity<?> getAnalytics() {
         LocalDateTime startOfToday = LocalDate.now(IST).atStartOfDay();
         LocalDateTime sevenDaysAgo = startOfToday.minusDays(6);
 
@@ -58,15 +58,15 @@ public class AnalyticsController {
         long last7DaysRequests = siteVisitRepository.countByVisitedAtAfter(sevenDaysAgo);
         long totalRequests = siteVisitRepository.count();
 
-        List> topPages = new ArrayList<>();
+        var topPages = new ArrayList<>();
         for (Object[] row : siteVisitRepository.findTopPathsSince(sevenDaysAgo)) {
             if (topPages.size() >= 6) break;
             topPages.add(Map.of("path", String.valueOf(row[0]), "views", ((Number) row[1]).longValue()));
         }
 
-        List> recent = new ArrayList<>();
+        var recent = new ArrayList<>();
         for (SiteVisit v : siteVisitRepository.findTop15ByOrderByVisitedAtDesc()) {
-            Map<String, Object> item = new LinkedHashMap<>();
+            var item = new LinkedHashMap<>();
             item.put("id", v.getId());
             item.put("path", v.getPath());
             item.put("visitorId", v.getVisitorId() != null ? v.getVisitorId() : "guest");
@@ -74,7 +74,7 @@ public class AnalyticsController {
             recent.add(item);
         }
 
-        Map<String, Object> payload = new LinkedHashMap<>();
+        var payload = new LinkedHashMap<>();
         payload.put("todayRequests", todayRequests);
         payload.put("uniqueVisitorsToday", uniqueVisitorsToday);
         payload.put("last7DaysRequests", last7DaysRequests);
