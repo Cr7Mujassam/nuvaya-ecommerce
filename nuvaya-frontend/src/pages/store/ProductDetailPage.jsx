@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import ProductCard from '../../components/common/ProductCard';
 import axiosClient, { resolveAssetUrl } from '../../api/axiosClient';
 import { Heart } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
@@ -12,6 +13,7 @@ export default function ProductDetailPage() {
   const { addItem } = useCart();
   const { isWishlisted, toggleWishlist } = useWishlist();
   const [product, setProduct] = useState(null);
+  const [relatedProducts, setRelatedProducts] = useState([]);
   const [selectedColor, setSelectedColor] = useState('');
   const [activeImageUrl, setActiveImageUrl] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
@@ -22,6 +24,7 @@ export default function ProductDetailPage() {
   const galleryRef = useRef(null);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
     axiosClient.get(`/products/${id}`).then((r) => {
       const p = r.data;
       setProduct(p);
@@ -38,6 +41,12 @@ export default function ProductDetailPage() {
       if (defaultPack?.allowMixedColors) {
         setMixedColors(Array(defaultPack.pieceCount).fill(initColor || 'Black'));
       }
+      axiosClient.get("/products", { params: { size: 12, sortBy: "newest" } }).then((res) => {
+        const all = (res.data?.content || []).filter((item) => String(item.id) !== String(p.id));
+        const sameCat = all.filter((item) => item.categoryName && item.categoryName === p.categoryName);
+        const others = all.filter((item) => item.categoryName !== p.categoryName);
+        setRelatedProducts([...sameCat, ...others].slice(0, 8));
+      }).catch(() => {});
     });
   }, [id]);
 
@@ -377,6 +386,29 @@ export default function ProductDetailPage() {
       </div>
     </div>
       <ProductReviewsSection productId={product.id} />
+
+      {relatedProducts.length > 0 && (
+        <section style={{ maxWidth: 1160, margin: "24px auto 64px", padding: "36px 20px 0", borderTop: "1px solid var(--border-sand)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
+            <div>
+              <div style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.14em", color: "var(--brand-gold-dark)", textTransform: "uppercase" }}>
+                Curated For You
+              </div>
+              <h2 style={{ fontSize: "1.9rem", color: "var(--brand-plum)", margin: "4px 0 0" }}>
+                You May Also Like
+              </h2>
+            </div>
+            <Link to="/shop" style={{ fontSize: "0.86rem", fontWeight: 700, color: "var(--brand-plum)", textDecoration: "underline", textUnderlineOffset: 4 }}>
+              Explore Full Collection →
+            </Link>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 22 }}>
+            {relatedProducts.map((item) => (
+              <ProductCard key={item.id} product={item} />
+            ))}
+          </div>
+        </section>
+      )}
     </>
   );
 }
