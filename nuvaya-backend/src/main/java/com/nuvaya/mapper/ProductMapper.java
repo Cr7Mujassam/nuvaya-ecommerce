@@ -46,6 +46,8 @@ public class ProductMapper {
                 .featured(p.isFeatured())
                 .newArrival(p.isNewArrival())
                 .bestSeller(p.isBestSeller())
+                .premiumHijab(p.isPremiumHijab())
+                .everydayHijab(p.isEverydayHijab())
                 .deliveryChargeType(p.getDeliveryChargeType())
                 .deliveryChargeAmount(p.getDeliveryChargeAmount())
                 .colors(p.getColors().stream().map(c -> ProductResponse.ColorView.builder()

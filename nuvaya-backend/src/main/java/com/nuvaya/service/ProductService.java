@@ -55,7 +55,17 @@ public class ProductService {
             if (categorySlug != null && !categorySlug.isBlank() && !categorySlug.equals("all")) {
                 if (categorySlug.equals("new-arrivals")) predicates.add(cb.isTrue(root.get("newArrival")));
                 else if (categorySlug.equals("best-sellers")) predicates.add(cb.isTrue(root.get("bestSeller")));
-                else {
+                else if (categorySlug.equals("premium-hijabs")) {
+                    predicates.add(cb.or(
+                            cb.isTrue(root.get("premiumHijab")),
+                            cb.equal(root.get("category").get("slug"), "premium-hijabs")
+                    ));
+                } else if (categorySlug.equals("everyday-hijabs")) {
+                    predicates.add(cb.or(
+                            cb.isTrue(root.get("everydayHijab")),
+                            cb.equal(root.get("category").get("slug"), "everyday-hijabs")
+                    ));
+                } else {
                     var matchedCat = categoryRepository.findBySlug(categorySlug).orElse(null);
                     if (matchedCat != null) {
                         var childIds = categoryRepository.findByParentCategoryId(matchedCat.getId())
@@ -159,6 +169,8 @@ public class ProductService {
         p.setFeatured(req.isFeatured());
         p.setNewArrival(req.isNewArrival());
         p.setBestSeller(req.isBestSeller());
+        p.setPremiumHijab(req.isPremiumHijab());
+        p.setEverydayHijab(req.isEverydayHijab());
         p.setDeliveryChargeType(req.getDeliveryChargeType());
         p.setDeliveryChargeAmount(req.getDeliveryChargeAmount() != null ? req.getDeliveryChargeAmount() : BigDecimal.ZERO);
 

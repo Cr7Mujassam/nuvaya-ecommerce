@@ -30,6 +30,8 @@ public class ProductResponse {
     private boolean featured;
     private boolean newArrival;
     private boolean bestSeller;
+    private boolean premiumHijab;
+    private boolean everydayHijab;
     private DeliveryChargeType deliveryChargeType;
     private BigDecimal deliveryChargeAmount;
     private List<ColorView> colors;

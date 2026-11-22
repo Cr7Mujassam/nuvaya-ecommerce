@@ -24,6 +24,8 @@ public class ProductRequest {
     private boolean featured;
     private boolean newArrival;
     private boolean bestSeller;
+    private boolean premiumHijab;
+    private boolean everydayHijab;
     private DeliveryChargeType deliveryChargeType = DeliveryChargeType.FREE;
     private BigDecimal deliveryChargeAmount = BigDecimal.ZERO;
     private List<ColorDto> colors = new ArrayList<>();

@@ -51,6 +51,8 @@ public class Product {
     @Column(nullable = false) @Builder.Default private boolean featured = false;
     @Column(nullable = false) @Builder.Default private boolean newArrival = false;
     @Column(nullable = false) @Builder.Default private boolean bestSeller = false;
+    @Column(nullable = false) @Builder.Default private boolean premiumHijab = false;
+    @Column(nullable = false) @Builder.Default private boolean everydayHijab = false;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30) @Builder.Default
