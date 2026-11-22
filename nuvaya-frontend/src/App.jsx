@@ -1,5 +1,6 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, useSearchParams, Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useSearchParams, useLocation, Link } from 'react-router-dom';
+import axiosClient from './api/axiosClient';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import WishlistPage from './pages/store/WishlistPage';
@@ -41,9 +42,29 @@ function OrderSubmittedPage() {
   );
 }
 
+function PageViewTracker() {
+  const location = useLocation();
+  useEffect(() => {
+    const fullPath = `${location.pathname}${location.search}`;
+    if (location.pathname.startsWith("/admin")) return;
+    let vid = localStorage.getItem("nuvaya_vid");
+    if (!vid) {
+      vid = `v_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
+      localStorage.setItem("nuvaya_vid", vid);
+    }
+    axiosClient.post("/store/track", {
+      path: fullPath,
+      visitorId: vid,
+      referrer: document.referrer || ""
+    }).catch(() => {});
+  }, [location.pathname, location.search]);
+  return null;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
+      <PageViewTracker />
       <WishlistProvider>
       <CartProvider>
         <Navbar />

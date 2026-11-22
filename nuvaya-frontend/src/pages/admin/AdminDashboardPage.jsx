@@ -30,6 +30,7 @@ const emptyProductForm = {
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState(null);
+  const [analytics, setAnalytics] = useState({ todayRequests: 0, uniqueVisitorsToday: 0, last7DaysRequests: 0, totalRequests: 0, topPages: [], recentRequests: [] });
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -53,13 +54,14 @@ export default function AdminDashboardPage() {
 
   const loadAll = async () => {
     try {
-      const [dashRes, prodRes, catRes, ordRes, setRes, revRes] = await Promise.all([
+      const [dashRes, prodRes, catRes, ordRes, setRes, revRes, anaRes] = await Promise.all([
         axiosClient.get('/admin/dashboard'),
         axiosClient.get('/admin/products?size=100'),
         axiosClient.get('/categories'),
         axiosClient.get('/admin/orders'),
         axiosClient.get('/store/settings'),
         axiosClient.get('/admin/reviews?size=100').catch(() => ({ data: { content: [] } })),
+        axiosClient.get('/admin/analytics').catch(() => ({ data: { todayRequests: 0, uniqueVisitorsToday: 0, last7DaysRequests: 0, totalRequests: 0, topPages: [], recentRequests: [] } })),
       ]);
       setStats(dashRes.data);
       setProducts(prodRes.data.content || []);
@@ -67,6 +69,7 @@ export default function AdminDashboardPage() {
       setOrders(ordRes.data.content || []);
       setSettings(setRes.data);
       setReviews(revRes.data?.content || []);
+      if (anaRes?.data) setAnalytics(anaRes.data);
       if (catRes.data?.length && !form.categoryId) {
         setForm((prev) => ({ ...prev, categoryId: catRes.data[0].id }));
       }
@@ -446,6 +449,7 @@ export default function AdminDashboardPage() {
           <div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 18, marginBottom: 32 }}>
               {[
+                { label: 'Website Requests (Today)', value: analytics.todayRequests ?? 0, sub: `${analytics.uniqueVisitorsToday ?? 0} Unique visitors • ${analytics.totalRequests ?? 0} total`, icon: ExternalLink, accent: '#1B4965' },
                 { label: 'Catalog Products', value: stats.totalProducts, sub: `${stats.activeProducts} Active on store`, icon: Package, accent: '#2C141F' },
                 { label: 'WhatsApp Orders', value: stats.totalOrders, sub: `${stats.pendingOrders} Awaiting confirmation`, icon: ShoppingBag, accent: '#9E7B43' },
                 { label: 'Gross Order Value', value: `₹${totalRevenue.toLocaleString('en-IN')}`, sub: 'Excluding cancelled orders', icon: Sparkles, accent: '#1E6F50' },
@@ -466,6 +470,46 @@ export default function AdminDashboardPage() {
                   </div>
                 );
               })}
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 20 }}>
+              <div style={{ background: "#fff", padding: 22, borderRadius: 16, border: "1px solid var(--border-sand)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                  <h3 style={{ margin: 0, color: "var(--brand-plum)", fontSize: "1.1rem" }}>Top Visited Pages (7 Days)</h3>
+                  <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--brand-gold-dark)" }}>{analytics.last7DaysRequests ?? 0} Requests</span>
+                </div>
+                {(analytics.topPages || []).length === 0 ? (
+                  <div style={{ color: "var(--text-muted)", fontSize: "0.86rem" }}>Visitor traffic will appear here as shoppers browse nuvaya.co.in.</div>
+                ) : (
+                  <div style={{ display: "grid", gap: 8 }}>
+                    {analytics.topPages.map((pg) => (
+                      <div key={pg.path} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", borderRadius: 10, background: "var(--bg-cream)", fontSize: "0.86rem" }}>
+                        <span style={{ fontWeight: 600, color: "var(--brand-plum)", wordBreak: "break-all" }}>{pg.path}</span>
+                        <span style={{ fontWeight: 700, color: "#1E6F50", marginLeft: 10 }}>{pg.views}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ background: "#fff", padding: 22, borderRadius: 16, border: "1px solid var(--border-sand)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                  <h3 style={{ margin: 0, color: "var(--brand-plum)", fontSize: "1.1rem" }}>Latest Incoming Requests</h3>
+                  <button type="button" onClick={loadAll} style={{ padding: "4px 10px", borderRadius: 8, border: "1px solid var(--border-sand)", background: "var(--bg-cream)", fontSize: "0.76rem", fontWeight: 700, cursor: "pointer" }}>Refresh</button>
+                </div>
+                {(analytics.recentRequests || []).length === 0 ? (
+                  <div style={{ color: "var(--text-muted)", fontSize: "0.86rem" }}>No requests logged yet.</div>
+                ) : (
+                  <div style={{ display: "grid", gap: 7, maxHeight: 240, overflowY: "auto" }}>
+                    {analytics.recentRequests.map((req) => (
+                      <div key={req.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 10px", borderRadius: 8, border: "1px solid var(--border-sand)", fontSize: "0.8rem" }}>
+                        <span style={{ fontWeight: 600, color: "var(--brand-plum)" }}>{req.path}</span>
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.74rem" }}>{String(req.visitedAt).replace("T", " ").slice(0, 16)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
