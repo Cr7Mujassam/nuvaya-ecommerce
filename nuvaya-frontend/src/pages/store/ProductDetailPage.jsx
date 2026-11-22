@@ -22,6 +22,10 @@ export default function ProductDetailPage() {
   const [qty, setQty] = useState(1);
   const [buyingNow, setBuyingNow] = useState(false);
   const galleryRef = useRef(null);
+  const inlineCtaRef = useRef(null);
+  const relatedRef = useRef(null);
+  const [pastInlineCta, setPastInlineCta] = useState(false);
+  const [atRelatedSection, setAtRelatedSection] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -49,6 +53,38 @@ export default function ProductDetailPage() {
       }).catch(() => {});
     });
   }, [id]);
+
+  useEffect(() => {
+    const ctaEl = inlineCtaRef.current;
+    const relEl = relatedRef.current;
+
+    const ctaObs = ctaEl
+      ? new IntersectionObserver(
+          ([entry]) => {
+            // Show floating bar only when inline buttons have scrolled ABOVE the top of viewport
+            setPastInlineCta(!entry.isIntersecting && entry.boundingClientRect.top < 0);
+          },
+          { threshold: 0 }
+        )
+      : null;
+
+    const relObs = relEl
+      ? new IntersectionObserver(
+          ([entry]) => {
+            // Hide floating bar once You May Also Like / Footer area enters view
+            setAtRelatedSection(entry.isIntersecting || entry.boundingClientRect.top < window.innerHeight);
+          },
+          { threshold: 0.05 }
+        )
+      : null;
+
+    if (ctaObs && ctaEl) ctaObs.observe(ctaEl);
+    if (relObs && relEl) relObs.observe(relEl);
+    return () => {
+      if (ctaObs) ctaObs.disconnect();
+      if (relObs) relObs.disconnect();
+    };
+  }, [product, relatedProducts.length]);
 
   if (!product) return <div style={{ padding: 60, textAlign: 'center' }}>Loading product...</div>;
 
@@ -328,7 +364,7 @@ export default function ProductDetailPage() {
           </div>
         )}
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 24 }}>
+        <div ref={inlineCtaRef} style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 24 }}>
           <input
             type="number"
             min={1}
@@ -388,7 +424,7 @@ export default function ProductDetailPage() {
       <ProductReviewsSection productId={product.id} />
 
       {relatedProducts.length > 0 && (
-        <section style={{ maxWidth: 1160, margin: "24px auto 64px", padding: "36px 20px 0", borderTop: "1px solid var(--border-sand)" }}>
+        <section ref={relatedRef} style={{ maxWidth: 1160, margin: "24px auto 64px", padding: "36px 20px 0", borderTop: "1px solid var(--border-sand)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
             <div>
               <div style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.14em", color: "var(--brand-gold-dark)", textTransform: "uppercase" }}>
@@ -409,7 +445,8 @@ export default function ProductDetailPage() {
           </div>
         </section>
       )}
-      {/* Always-visible Sticky Bottom Action Bar */}
+      {/* Flipkart-style Conditional Sticky Bar: shows after scrolling past CTA, hides at Similar Products */}
+      {pastInlineCta && !atRelatedSection && (
       <div
         style={{
           position: "fixed",
@@ -476,7 +513,7 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
-      <div style={{ height: 74 }} />
+      )}
     </>
   );
 }
