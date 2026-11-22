@@ -63,18 +63,6 @@ public class AdminProductController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/categories")
-    public ResponseEntity<ProductCategory> createCategory(@RequestBody Map<String, String> body) {
-        String name = body.get("name").trim();
-        ProductCategory cat = ProductCategory.builder()
-                .name(name)
-                .slug(name.toLowerCase().replaceAll("[^a-z0-9]+", "-"))
-                .description(body.getOrDefault("description", ""))
-                .active(true)
-                .displayOrder((int) categoryRepository.count() + 1)
-                .build();
-        return ResponseEntity.status(HttpStatus.CREATED).body(categoryRepository.save(cat));
-    }
 
     @PostMapping("/uploads/image")
     public ResponseEntity<Object> uploadImage(@RequestParam("file") MultipartFile file) {
