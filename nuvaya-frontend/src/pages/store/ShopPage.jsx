@@ -6,6 +6,7 @@ import ProductCard from '../../components/common/ProductCard';
 export default function ShopPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
+  const [availableColors, setAvailableColors] = useState([]);
   const [categories, setCategories] = useState([]);
   const [sort, setSort] = useState('newest');
   const [color, setColor] = useState('');
@@ -40,7 +41,22 @@ export default function ShopPage() {
         sortBy: sort,
         size: 60
       }
-    }).then((r) => setProducts(r.data.content || [])).catch(() => {});
+    }).then((r) => {
+      const items = r.data.content || [];
+      setProducts(items);
+      if (!color) {
+        const seen = new Map();
+        items.forEach((prod) => {
+          (prod.colors || []).forEach((c) => {
+            const name = (c.name || "").trim();
+            if (name && !seen.has(name.toLowerCase())) {
+              seen.set(name.toLowerCase(), name);
+            }
+          });
+        });
+        setAvailableColors(Array.from(seen.values()).sort((a, b) => a.localeCompare(b)));
+      }
+    }).catch(() => {});
   }, [activeSlug, fabric, search, color, sort]);
 
   const handleMainCategoryChange = (nextMainSlug) => {
@@ -103,7 +119,10 @@ export default function ShopPage() {
 
           <select value={color} onChange={(e) => setColor(e.target.value)} style={selectStyle}>
             <option value="">All Colors</option>
-            {['Black', 'Beige', 'Mocha', 'Olive', 'Chocolate', 'Dusty Rose', 'Warm Ivory'].map((c) => (
+            {(color && !availableColors.some((c) => c.toLowerCase() === color.toLowerCase())
+              ? [color, ...availableColors]
+              : availableColors
+            ).map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
