@@ -22,6 +22,8 @@ const emptyProductForm = {
   featured: true,
   newArrival: true,
   bestSeller: false,
+  premiumHijab: false,
+  everydayHijab: false,
   deliveryChargeType: 'FREE',
   deliveryChargeAmount: 0,
   colors: [{ name: 'Black', hexCode: '#191817', inStock: true }],
@@ -140,6 +142,8 @@ export default function AdminDashboardPage() {
       featured: Boolean(product.featured),
       newArrival: Boolean(product.newArrival),
       bestSeller: Boolean(product.bestSeller),
+      premiumHijab: Boolean(product.premiumHijab),
+      everydayHijab: Boolean(product.everydayHijab),
       deliveryChargeType: product.deliveryChargeType || 'FREE',
       deliveryChargeAmount: product.deliveryChargeAmount ?? 0,
       colors: product.colors?.length
@@ -282,6 +286,8 @@ export default function AdminDashboardPage() {
         featured: form.featured,
         newArrival: form.newArrival,
         bestSeller: form.bestSeller,
+        premiumHijab: Boolean(form.premiumHijab),
+        everydayHijab: Boolean(form.everydayHijab),
         deliveryChargeType: form.deliveryChargeType,
         deliveryChargeAmount: Number(form.deliveryChargeAmount || 0),
         colors: form.colors.filter((c) => c.name.trim()),
@@ -338,6 +344,8 @@ export default function AdminDashboardPage() {
         featured: Boolean(product.featured),
         newArrival: Boolean(product.newArrival),
         bestSeller: Boolean(product.bestSeller),
+      premiumHijab: Boolean(product.premiumHijab),
+      everydayHijab: Boolean(product.everydayHijab),
         deliveryChargeType: product.deliveryChargeType || 'FREE',
         deliveryChargeAmount: Number(product.deliveryChargeAmount || 0),
         colors: (product.colors || []).map((c) => ({
@@ -727,6 +735,12 @@ export default function AdminDashboardPage() {
                     </label>
                     <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: '0.88rem' }}>
                       <input type="checkbox" checked={form.bestSeller} onChange={(e) => setForm({ ...form, bestSeller: e.target.checked })} /> Best Seller
+                    </label>
+                    <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: '0.88rem', fontWeight: 600, color: 'var(--brand-plum)' }}>
+                      <input type="checkbox" checked={Boolean(form.premiumHijab)} onChange={(e) => setForm({ ...form, premiumHijab: e.target.checked })} /> Premium Hijab
+                    </label>
+                    <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: '0.88rem', fontWeight: 600, color: 'var(--brand-plum)' }}>
+                      <input type="checkbox" checked={Boolean(form.everydayHijab)} onChange={(e) => setForm({ ...form, everydayHijab: e.target.checked })} /> Everyday Hijab
                     </label>
                   </div>
                 </div>
