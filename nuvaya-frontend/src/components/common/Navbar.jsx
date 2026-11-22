@@ -1,23 +1,26 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, Search, User, Menu, X, ChevronDown, Heart } from 'lucide-react';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
-
-const HIJAB_FABRICS = [
-  { label: 'All Hijabs', to: '/shop?category=hijabs' },
-  { label: 'Jersey Hijabs', to: '/shop?category=hijabs&fabric=Jersey' },
-  { label: 'Chiffon Hijabs', to: '/shop?category=hijabs&fabric=Chiffon' },
-  { label: 'Stamble Hijabs', to: '/shop?category=hijabs&fabric=Stamble' },
-];
+import axiosClient from '../../api/axiosClient';
 
 export default function Navbar() {
   const { items, storeSettings, setDrawerOpen } = useCart();
   const { wishlistCount } = useWishlist();
   const [search, setSearch] = useState('');
   const [mobileMenu, setMobileMenu] = useState(false);
-  const [hijabDropdown, setHijabDropdown] = useState(false);
+  const [openDropdownSlug, setOpenDropdownSlug] = useState(null);
+  const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    axiosClient.get('/categories').then((r) => setCategories(r.data || [])).catch(() => {});
+  }, []);
+
+  const mainCategories = categories.filter((c) => !c.parentCategoryId);
+  const subCategoriesFor = (parentId) =>
+    categories.filter((c) => String(c.parentCategoryId) === String(parentId));
 
   const totalCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
@@ -71,58 +74,92 @@ export default function Navbar() {
         <nav className="nav-desktop-links" style={{ alignItems: 'center' }}>
           <Link to="/shop">All Collections</Link>
 
-          <div
-            style={{ position: 'relative' }}
-            onMouseEnter={() => setHijabDropdown(true)}
-            onMouseLeave={() => setHijabDropdown(false)}
-          >
-            <Link
-              to="/shop?category=hijabs"
-              onClick={() => setHijabDropdown(false)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
-            >
-              Hijabs <ChevronDown size={13} />
-            </Link>
+          {mainCategories.length > 0 ? (
+            mainCategories.map((mc) => {
+              const kids = subCategoriesFor(mc.id);
+              if (kids.length === 0) {
+                return (
+                  <Link key={mc.id} to={`/shop?category=${encodeURIComponent(mc.slug)}`}>
+                    {mc.name}
+                  </Link>
+                );
+              }
+              return (
+                <div
+                  key={mc.id}
+                  style={{ position: 'relative' }}
+                  onMouseEnter={() => setOpenDropdownSlug(mc.slug)}
+                  onMouseLeave={() => setOpenDropdownSlug(null)}
+                >
+                  <Link
+                    to={`/shop?category=${encodeURIComponent(mc.slug)}`}
+                    onClick={() => setOpenDropdownSlug(null)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                  >
+                    {mc.name} <ChevronDown size={13} />
+                  </Link>
 
-            {hijabDropdown && (
-              <div style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                paddingTop: 10,
-                minWidth: 205,
-                zIndex: 50
-              }}>
-                <div style={{
-                  background: '#FFFFFF',
-                  border: '1px solid rgba(198,161,99,0.55)',
-                  borderRadius: 12,
-                  padding: '8px 0',
-                  boxShadow: '0 16px 36px rgba(39,16,27,0.14)',
-                  display: 'grid'
-                }}>
-                  {HIJAB_FABRICS.map((item) => (
-                    <Link
-                      key={item.label}
-                      to={item.to}
-                      onClick={() => setHijabDropdown(false)}
-                      style={{
-                        padding: '9px 16px',
-                        fontSize: '0.76rem',
-                        letterSpacing: '0.1em',
-                        color: 'var(--brand-plum)',
-                        display: 'block'
-                      }}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
+                  {openDropdownSlug === mc.slug && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      paddingTop: 10,
+                      minWidth: 215,
+                      zIndex: 50
+                    }}>
+                      <div style={{
+                        background: '#FFFFFF',
+                        border: '1px solid rgba(198,161,99,0.55)',
+                        borderRadius: 12,
+                        padding: '8px 0',
+                        boxShadow: '0 16px 36px rgba(39,16,27,0.14)',
+                        display: 'grid'
+                      }}>
+                        <Link
+                          to={`/shop?category=${encodeURIComponent(mc.slug)}`}
+                          onClick={() => setOpenDropdownSlug(null)}
+                          style={{
+                            padding: '9px 16px',
+                            fontSize: '0.76rem',
+                            letterSpacing: '0.1em',
+                            fontWeight: 700,
+                            color: 'var(--brand-plum)',
+                            display: 'block',
+                            borderBottom: '1px solid var(--border-sand)'
+                          }}
+                        >
+                          All {mc.name}
+                        </Link>
+                        {kids.map((sc) => (
+                          <Link
+                            key={sc.id}
+                            to={`/shop?category=${encodeURIComponent(mc.slug)}&subCategory=${encodeURIComponent(sc.slug)}`}
+                            onClick={() => setOpenDropdownSlug(null)}
+                            style={{
+                              padding: '9px 16px',
+                              fontSize: '0.76rem',
+                              letterSpacing: '0.1em',
+                              color: 'var(--brand-plum)',
+                              display: 'block'
+                            }}
+                          >
+                            {sc.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
-          </div>
+              );
+            })
+          ) : (
+            <>
+              <Link to="/shop?category=hijabs">Hijabs</Link>
+              <Link to="/shop?category=abayas">Abayas</Link>
+            </>
+          )}
 
-          <Link to="/shop?category=abayas">Abayas</Link>
           <Link to="/shop?category=new-arrivals">New Arrivals</Link>
           <Link to="/shop?category=best-sellers">Bundles</Link>
           <Link to="/track-order">Track Order</Link>
@@ -200,12 +237,26 @@ export default function Navbar() {
             />
           </form>
           <Link to="/shop" onClick={() => setMobileMenu(false)}>All Collections</Link>
-          {HIJAB_FABRICS.map((item) => (
-            <Link key={item.label} to={item.to} onClick={() => setMobileMenu(false)} style={{ paddingLeft: item.label === 'All Hijabs' ? 0 : 12, fontSize: item.label === 'All Hijabs' ? '0.86rem' : '0.8rem', color: item.label === 'All Hijabs' ? 'var(--brand-plum)' : 'var(--brand-gold-dark)' }}>
-              {item.label}
-            </Link>
-          ))}
-          <Link to="/shop?category=abayas" onClick={() => setMobileMenu(false)}>Abayas</Link>
+          {mainCategories.map((mc) => {
+            const kids = subCategoriesFor(mc.id);
+            return (
+              <React.Fragment key={mc.id}>
+                <Link to={`/shop?category=${encodeURIComponent(mc.slug)}`} onClick={() => setMobileMenu(false)}>
+                  {mc.name}
+                </Link>
+                {kids.map((sc) => (
+                  <Link
+                    key={sc.id}
+                    to={`/shop?category=${encodeURIComponent(mc.slug)}&subCategory=${encodeURIComponent(sc.slug)}`}
+                    onClick={() => setMobileMenu(false)}
+                    style={{ paddingLeft: 14, fontSize: '0.8rem', color: 'var(--brand-gold-dark)' }}
+                  >
+                    {sc.name}
+                  </Link>
+                ))}
+              </React.Fragment>
+            );
+          })}
           <Link to="/shop?category=new-arrivals" onClick={() => setMobileMenu(false)}>New Arrivals</Link>
           <Link to="/shop?category=best-sellers" onClick={() => setMobileMenu(false)}>Bundles (Pack of 3 & 5)</Link>
           <Link to="/track-order" onClick={() => setMobileMenu(false)}>Track Order</Link>
