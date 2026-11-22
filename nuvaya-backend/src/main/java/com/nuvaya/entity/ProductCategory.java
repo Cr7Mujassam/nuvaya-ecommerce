@@ -16,6 +16,10 @@ public class ProductCategory {
     private String description;
     @Column(length = 500)
     private String bannerImageUrl;
+    @Column
+    private Long parentCategoryId;
+    @Column(length = 100)
+    private String parentCategoryName;
     @Column(nullable = false) @Builder.Default
     private boolean active = true;
     @Column(nullable = false) @Builder.Default

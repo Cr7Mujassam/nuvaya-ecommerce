@@ -55,7 +55,23 @@ public class ProductService {
             if (categorySlug != null && !categorySlug.isBlank() && !categorySlug.equals("all")) {
                 if (categorySlug.equals("new-arrivals")) predicates.add(cb.isTrue(root.get("newArrival")));
                 else if (categorySlug.equals("best-sellers")) predicates.add(cb.isTrue(root.get("bestSeller")));
-                else predicates.add(cb.equal(root.get("category").get("slug"), categorySlug));
+                else {
+                    var matchedCat = categoryRepository.findBySlug(categorySlug).orElse(null);
+                    if (matchedCat != null) {
+                        var childIds = categoryRepository.findByParentCategoryId(matchedCat.getId())
+                                .stream().map(ProductCategory::getId).toList();
+                        if (!childIds.isEmpty()) {
+                            var allowedIds = new ArrayList<Long>();
+                            allowedIds.add(matchedCat.getId());
+                            allowedIds.addAll(childIds);
+                            predicates.add(root.get("category").get("id").in(allowedIds));
+                        } else {
+                            predicates.add(cb.equal(root.get("category").get("id"), matchedCat.getId()));
+                        }
+                    } else {
+                        predicates.add(cb.equal(root.get("category").get("slug"), categorySlug));
+                    }
+                }
             }
             if (color != null && !color.isBlank()) {
                 Join<Product, ProductColor> colorJoin = root.join("colors", JoinType.INNER);

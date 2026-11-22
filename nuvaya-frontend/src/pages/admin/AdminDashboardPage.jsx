@@ -2,13 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus, Trash2, Upload, Package, ShoppingBag, Settings,
-  LayoutDashboard, LogOut, Sparkles, AlertTriangle, CheckCircle2, ExternalLink, Pencil, X, Star, BadgeCheck, MessageSquareReply
+  LayoutDashboard, Layers, LogOut, Sparkles, AlertTriangle, CheckCircle2, ExternalLink, Pencil, X, Star, BadgeCheck, MessageSquareReply
 } from 'lucide-react';
 import axiosClient, { FALLBACK_IMAGE, resolveAssetUrl } from '../../api/axiosClient';
 
 const emptyProductForm = {
   name: '',
   sku: '',
+  mainCategoryId: '',
   categoryId: '',
   fabric: '',
   description: '',
@@ -33,6 +34,8 @@ export default function AdminDashboardPage() {
   const [analytics, setAnalytics] = useState({ todayRequests: 0, uniqueVisitorsToday: 0, last7DaysRequests: 0, totalRequests: 0, topPages: [], recentRequests: [] });
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [newCatForm, setNewCatForm] = useState({ name: '', parentCategoryId: '', description: '' });
+  const [savingCat, setSavingCat] = useState(false);
   const [orders, setOrders] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [reviewFilter, setReviewFilter] = useState('ALL');
@@ -70,8 +73,15 @@ export default function AdminDashboardPage() {
       setSettings(setRes.data);
       setReviews(revRes.data?.content || []);
       if (anaRes?.data) setAnalytics(anaRes.data);
-      if (catRes.data?.length && !form.categoryId) {
-        setForm((prev) => ({ ...prev, categoryId: catRes.data[0].id }));
+      if (catRes.data?.length && !form.mainCategoryId && !form.categoryId) {
+        const roots = catRes.data.filter((c) => !c.parentCategoryId);
+        const firstRoot = roots[0] || catRes.data[0];
+        const firstChild = catRes.data.find((c) => String(c.parentCategoryId) === String(firstRoot.id));
+        setForm((prev) => ({
+          ...prev,
+          mainCategoryId: String(firstRoot.id),
+          categoryId: firstChild ? String(firstChild.id) : String(firstRoot.id),
+        }));
       }
     } catch {
       navigate('/admin/login');
@@ -80,9 +90,19 @@ export default function AdminDashboardPage() {
 
   useEffect(() => { loadAll(); }, []);
 
+  const mainCategories = categories.filter((c) => !c.parentCategoryId);
+  const subCategoriesFor = (parentId) =>
+    categories.filter((c) => String(c.parentCategoryId) === String(parentId));
+
   const resetForm = () => {
     setEditingProductId(null);
-    setForm({ ...emptyProductForm, categoryId: categories[0]?.id || '' });
+    const firstRoot = mainCategories[0] || categories[0];
+    const firstChild = firstRoot ? subCategoriesFor(firstRoot.id)[0] : null;
+    setForm({
+      ...emptyProductForm,
+      mainCategoryId: firstRoot ? String(firstRoot.id) : '',
+      categoryId: firstChild ? String(firstChild.id) : (firstRoot ? String(firstRoot.id) : ''),
+    });
     setNewImageUrl('');
     setNewImageColor('');
   };
@@ -95,16 +115,18 @@ export default function AdminDashboardPage() {
   };
 
   const handleEditProduct = (product) => {
-    const matchedCat =
-      categories.find((c) => c.id === product.categoryId || c.name === product.categoryName)?.id ||
-      categories[0]?.id ||
-      '';
+    const matchedObj =
+      categories.find((c) => String(c.id) === String(product.categoryId) || c.name === product.categoryName) ||
+      categories[0];
+    const resolvedMainId = matchedObj?.parentCategoryId ? String(matchedObj.parentCategoryId) : String(matchedObj?.id || '');
+    const resolvedSubId = matchedObj?.parentCategoryId ? String(matchedObj.id) : '';
 
     setEditingProductId(product.id);
     setForm({
       name: product.name || '',
       sku: product.sku || '',
-      categoryId: matchedCat,
+      mainCategoryId: resolvedMainId,
+      categoryId: resolvedSubId || resolvedMainId,
       fabric: product.fabric || '',
       description: product.description || '',
       specifications: product.specifications || '',
@@ -210,6 +232,35 @@ export default function AdminDashboardPage() {
       ],
     }));
     setNewImageUrl('');
+  };
+
+  const handleCreateCategory = async (e) => {
+    e.preventDefault();
+    if (!newCatForm.name.trim() || savingCat) return;
+    setSavingCat(true);
+    try {
+      await axiosClient.post('/admin/categories', {
+        name: newCatForm.name.trim(),
+        parentCategoryId: newCatForm.parentCategoryId ? Number(newCatForm.parentCategoryId) : null,
+        description: newCatForm.description.trim(),
+      });
+      setNewCatForm({ name: '', parentCategoryId: newCatForm.parentCategoryId, description: '' });
+      await loadAll();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Could not create category.');
+    } finally {
+      setSavingCat(false);
+    }
+  };
+
+  const handleDeleteCategory = async (cat) => {
+    if (!window.confirm(`Delete "${cat.name}"?`)) return;
+    try {
+      await axiosClient.delete(`/admin/categories/${cat.id}`);
+      await loadAll();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Could not delete category.');
+    }
   };
 
   const handleSaveProduct = async (e) => {
@@ -414,6 +465,7 @@ export default function AdminDashboardPage() {
           {[
             { id: 'overview', label: 'Overview', icon: LayoutDashboard },
             { id: 'products', label: `Catalog (${products.length})`, icon: Package },
+            { id: 'categories', label: `Categories (${categories.length})`, icon: Layers },
             { id: 'orders', label: `WhatsApp Orders (${orders.length})`, icon: ShoppingBag },
             { id: 'reviews', label: `Reviews (${reviews.length})`, icon: Star },
             { id: 'settings', label: 'Store, Social & Contact', icon: Settings },
@@ -569,9 +621,43 @@ export default function AdminDashboardPage() {
                     <input required placeholder="e.g. NVY-HJ-STM-004" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} style={inp} />
                   </div>
                   <div>
-                    <label style={lbl}>Category *</label>
-                    <select required value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })} style={inp}>
-                      {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    <label style={lbl}>Main Category *</label>
+                    <select
+                      required
+                      value={form.mainCategoryId || ''}
+                      onChange={(e) => {
+                        const nextMain = e.target.value;
+                        const kids = subCategoriesFor(nextMain);
+                        setForm({
+                          ...form,
+                          mainCategoryId: nextMain,
+                          categoryId: kids[0] ? String(kids[0].id) : nextMain,
+                        });
+                      }}
+                      style={inp}
+                    >
+                      {(mainCategories.length ? mainCategories : categories).map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={lbl}>Sub-Category</label>
+                    <select
+                      value={subCategoriesFor(form.mainCategoryId).some((sc) => String(sc.id) === String(form.categoryId)) ? String(form.categoryId) : ''}
+                      onChange={(e) => {
+                        const subVal = e.target.value;
+                        setForm({
+                          ...form,
+                          categoryId: subVal || form.mainCategoryId,
+                        });
+                      }}
+                      style={inp}
+                    >
+                      <option value="">-- Direct under Main Category --</option>
+                      {subCategoriesFor(form.mainCategoryId).map((sc) => (
+                        <option key={sc.id} value={sc.id}>{sc.name}</option>
+                      ))}
                     </select>
                   </div>
                   <div>
@@ -863,6 +949,103 @@ export default function AdminDashboardPage() {
                           <Trash2 size={14} /> Delete
                         </button>
                       </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {tab === 'categories' && (
+          <div style={{ display: 'grid', gap: 24 }}>
+            <div style={{ background: '#fff', padding: 26, borderRadius: 16, border: '1.5px solid var(--brand-gold)' }}>
+              <div style={{ fontSize: '0.72rem', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--brand-gold-dark)', fontWeight: 700 }}>
+                Catalog Taxonomy
+              </div>
+              <h2 style={{ fontSize: '1.75rem', color: 'var(--brand-plum)', marginBottom: 16 }}>
+                Add Main Category or Sub-Category
+              </h2>
+              <form onSubmit={handleCreateCategory} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, alignItems: 'end' }}>
+                <div>
+                  <label style={lbl}>Parent Category (leave blank for Main Category)</label>
+                  <select
+                    value={newCatForm.parentCategoryId}
+                    onChange={(e) => setNewCatForm({ ...newCatForm, parentCategoryId: e.target.value })}
+                    style={inp}
+                  >
+                    <option value="">None (Create as Main Category — e.g. Hijabs, Abayas)</option>
+                    {mainCategories.map((mc) => (
+                      <option key={mc.id} value={mc.id}>Under: {mc.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={lbl}>{newCatForm.parentCategoryId ? 'Sub-Category Name *' : 'Main Category Name *'}</label>
+                  <input
+                    required
+                    placeholder={newCatForm.parentCategoryId ? 'e.g. Cotton Hijabs / Korean Nidha Abaya' : 'e.g. Hijabs / Abayas / Accessories'}
+                    value={newCatForm.name}
+                    onChange={(e) => setNewCatForm({ ...newCatForm, name: e.target.value })}
+                    style={inp}
+                  />
+                </div>
+                <div>
+                  <label style={lbl}>Short Description (Optional)</label>
+                  <input
+                    placeholder="Shown on collection header..."
+                    value={newCatForm.description}
+                    onChange={(e) => setNewCatForm({ ...newCatForm, description: e.target.value })}
+                    style={inp}
+                  />
+                </div>
+                <button type="submit" disabled={savingCat} className="btn-primary" style={{ height: 44 }}>
+                  {savingCat ? 'Saving...' : newCatForm.parentCategoryId ? '+ Add Sub-Category' : '+ Add Main Category'}
+                </button>
+              </form>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 18 }}>
+              {mainCategories.map((mc) => {
+                const kids = subCategoriesFor(mc.id);
+                return (
+                  <div key={mc.id} style={{ background: '#fff', padding: 20, borderRadius: 16, border: '1px solid var(--border-sand)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 10, borderBottom: '1px solid var(--border-sand)' }}>
+                      <div>
+                        <span style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.12em', color: 'var(--brand-gold-dark)', textTransform: 'uppercase' }}>Main Category</span>
+                        <h3 style={{ margin: '2px 0 0', color: 'var(--brand-plum)', fontSize: '1.25rem' }}>{mc.name}</h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteCategory(mc)}
+                        title="Delete Main Category"
+                        style={{ background: '#FDECEA', color: '#9E2A2B', border: 'none', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' }}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                    <div style={{ marginTop: 12 }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8 }}>
+                        Sub-Categories ({kids.length})
+                      </div>
+                      {kids.length === 0 ? (
+                        <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No sub-categories added yet.</div>
+                      ) : (
+                        <div style={{ display: 'grid', gap: 6 }}>
+                          {kids.map((sc) => (
+                            <div key={sc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 12px', borderRadius: 10, background: 'var(--bg-cream)' }}>
+                              <span style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--brand-plum)' }}>{sc.name}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCategory(sc)}
+                                style={{ background: 'transparent', color: '#9E2A2B', border: 'none', cursor: 'pointer', padding: 4 }}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

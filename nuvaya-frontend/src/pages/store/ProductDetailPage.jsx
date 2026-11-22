@@ -226,7 +226,7 @@ export default function ProductDetailPage() {
       </div>
 
       <div>
-        <div style={{ fontSize: '0.8rem', letterSpacing: '0.1em', color: 'var(--brand-soft-brown)', fontWeight: 700 }}>{product.categoryName} • SKU: {product.sku}</div>
+        <div style={{ fontSize: '0.8rem', letterSpacing: '0.1em', color: 'var(--brand-soft-brown)', fontWeight: 700 }}>{product.parentCategoryName ? `${product.parentCategoryName} › ${product.categoryName}` : product.categoryName} • SKU: {product.sku}</div>
         <h1 style={{ fontSize: '2.4rem', margin: '6px 0 12px' }}>{product.name}</h1>
         <div style={{ fontSize: '1.6rem', fontWeight: 700, marginBottom: 16 }}>₹{Number(activePrice).toLocaleString('en-IN')}</div>
         <p style={{ color: 'var(--text-muted)', marginBottom: 20 }}>{product.description}</p>

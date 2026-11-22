@@ -20,6 +20,9 @@ public class ProductResponse {
     private Long categoryId;
     private String categoryName;
     private String categorySlug;
+    private Long parentCategoryId;
+    private String parentCategoryName;
+    private String parentCategorySlug;
     private BigDecimal basePrice;
     private BigDecimal discountPrice;
     private Integer stockQuantity;

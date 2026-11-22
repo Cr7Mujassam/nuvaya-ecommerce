@@ -2,6 +2,7 @@ package com.nuvaya.mapper;
 
 import com.nuvaya.entity.ProductReview;
 import com.nuvaya.entity.enums.ReviewStatus;
+import com.nuvaya.repository.ProductCategoryRepository;
 import com.nuvaya.repository.ProductReviewRepository;
 import lombok.RequiredArgsConstructor;
 import java.util.List;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ProductMapper {
     private final ProductReviewRepository reviewRepository;
+    private final ProductCategoryRepository categoryRepository;
     public ProductResponse toResponse(Product p) {
         List<ProductReview> approved = reviewRepository.findByProductIdAndStatus(p.getId(), ReviewStatus.APPROVED);
         long reviewCount = approved.size();
@@ -32,6 +34,11 @@ public class ProductMapper {
                 .categoryId(p.getCategory().getId())
                 .categoryName(p.getCategory().getName())
                 .categorySlug(p.getCategory().getSlug())
+                .parentCategoryId(p.getCategory().getParentCategoryId())
+                .parentCategoryName(p.getCategory().getParentCategoryName())
+                .parentCategorySlug(p.getCategory().getParentCategoryId() != null
+                        ? categoryRepository.findById(p.getCategory().getParentCategoryId()).map(c -> c.getSlug()).orElse(null)
+                        : null)
                 .basePrice(p.getBasePrice())
                 .discountPrice(p.getDiscountPrice())
                 .stockQuantity(p.getStockQuantity())
