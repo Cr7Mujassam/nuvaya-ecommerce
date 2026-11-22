@@ -128,7 +128,7 @@ export default function ProductDetailPage() {
 
   return (
     <>
-    <div style={{ maxWidth: 1160, margin: '40px auto', padding: '0 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 44 }}>
+    <div style={{ maxWidth: 1160, margin: '24px auto', padding: '0 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 44 }}>
       <div>
         <div style={{ position: 'relative', width: '100%', maxWidth: 480, aspectRatio: '4 / 5', borderRadius: 16, overflow: 'hidden', background: 'var(--bg-cream)', border: '1px solid var(--border-sand)' }}>
           <div
@@ -227,9 +227,9 @@ export default function ProductDetailPage() {
 
       <div>
         <div style={{ fontSize: '0.8rem', letterSpacing: '0.1em', color: 'var(--brand-soft-brown)', fontWeight: 700 }}>{product.parentCategoryName ? `${product.parentCategoryName} › ${product.categoryName}` : product.categoryName} • SKU: {product.sku}</div>
-        <h1 style={{ fontSize: '2.4rem', margin: '6px 0 12px' }}>{product.name}</h1>
-        <div style={{ fontSize: '1.6rem', fontWeight: 700, marginBottom: 16 }}>₹{Number(activePrice).toLocaleString('en-IN')}</div>
-        <p style={{ color: 'var(--text-muted)', marginBottom: 20 }}>{product.description}</p>
+        <h1 style={{ fontSize: '2.15rem', margin: '4px 0 8px' }}>{product.name}</h1>
+        <div style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: 12 }}>₹{Number(activePrice).toLocaleString('en-IN')}</div>
+        <p style={{ color: 'var(--text-muted)', marginBottom: 14, fontSize: '0.93rem', lineHeight: 1.55 }}>{product.description}</p>
 
         {product.colors?.length > 0 && (
           <div style={{ marginBottom: 20 }}>
@@ -409,6 +409,74 @@ export default function ProductDetailPage() {
           </div>
         </section>
       )}
+      {/* Always-visible Sticky Bottom Action Bar */}
+      <div
+        style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 950,
+          background: "rgba(255, 255, 255, 0.97)",
+          backdropFilter: "blur(10px)",
+          borderTop: "1.5px solid var(--brand-gold)",
+          boxShadow: "0 -6px 24px rgba(35, 16, 25, 0.12)",
+          padding: "10px 18px",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1160,
+            margin: "0 auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: "1 1 220px" }}>
+            {images[0]?.imageUrl && (
+              <img
+                src={resolveAssetUrl(activeImageUrl || images[0].imageUrl)}
+                alt={product.name}
+                style={{ width: 42, height: 50, objectFit: "cover", borderRadius: 8, border: "1px solid var(--border-sand)", flexShrink: 0 }}
+              />
+            )}
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: "0.94rem", color: "var(--brand-plum)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {product.name}
+              </div>
+              <div style={{ fontSize: "0.82rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 8 }}>
+                <strong style={{ color: "var(--brand-plum)", fontSize: "0.96rem" }}>₹{Number(activePrice).toLocaleString("en-IN")}</strong>
+                {selectedColor && <span>• {selectedColor}</span>}
+                {selectedSize && <span>• {selectedSize}</span>}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: "1 1 320px", justifyContent: "flex-end" }}>
+            <button
+              type="button"
+              className="btn-outline"
+              style={{ flex: "1 1 160px", maxWidth: 210, borderRadius: 999, padding: "11px 16px", fontWeight: 700, fontSize: "0.82rem", letterSpacing: "0.05em", background: "#fff" }}
+              onClick={() => addItem(buildCartPayload())}
+            >
+              Add to Shopping Bag
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={buyingNow}
+              style={{ flex: "1 1 140px", maxWidth: 190, padding: "11px 18px", fontSize: "0.84rem" }}
+              onClick={handleBuyNow}
+            >
+              {buyingNow ? "Opening..." : "Buy Now"}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div style={{ height: 74 }} />
     </>
   );
 }
