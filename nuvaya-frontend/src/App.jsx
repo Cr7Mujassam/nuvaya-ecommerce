@@ -44,6 +44,14 @@ function OrderSubmittedPage() {
   );
 }
 
+function ScrollToTop() {
+  const { pathname, search } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [pathname, search]);
+  return null;
+}
+
 function PageViewTracker() {
   const location = useLocation();
   useEffect(() => {
@@ -67,6 +75,7 @@ function PageViewTracker() {
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <PageViewTracker />
       <WishlistProvider>
       <CartProvider>
