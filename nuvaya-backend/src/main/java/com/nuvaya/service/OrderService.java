@@ -17,9 +17,17 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service @RequiredArgsConstructor
 public class OrderService {
+    private static final Set<OrderStatus> CONFIRMED_OR_LATER = Set.of(
+            OrderStatus.CONFIRMED,
+            OrderStatus.PACKED,
+            OrderStatus.SHIPPED,
+            OrderStatus.DELIVERED
+    );
+
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final StoreSettingsService storeSettingsService;
@@ -41,6 +49,7 @@ public class OrderService {
             throw new BusinessValidationException("Online payment is currently disabled.");
         }
         PaymentStatus initialPayStatus = (pm == PaymentMethod.COD) ? PaymentStatus.COD_PENDING : PaymentStatus.PENDING;
+        boolean deductStockNow = (pm == PaymentMethod.ONLINE);
 
         Order order = Order.builder()
                 .orderReference(OrderReferenceGenerator.generate())
@@ -70,6 +79,7 @@ public class OrderService {
             String packName = "Single Piece";
             int pieceCount = 1;
             BigDecimal packShipping = BigDecimal.ZERO;
+            Long resolvedPackId = null;
 
             if (itemReq.getPackId() != null) {
                 ProductPack pack = product.getPacks().stream()
@@ -77,7 +87,10 @@ public class OrderService {
                         .findFirst().orElseThrow(() -> new BusinessValidationException("Pack unavailable"));
                 if (pack.getStockQuantity() < qty)
                     throw new BusinessValidationException("Insufficient stock for " + product.getName());
-                pack.setStockQuantity(pack.getStockQuantity() - qty);
+                if (deductStockNow) {
+                    pack.setStockQuantity(pack.getStockQuantity() - qty);
+                }
+                resolvedPackId = pack.getId();
                 origPrice = pack.getPackPrice();
                 effPrice = (pack.getDiscountPrice() != null && pack.getDiscountPrice().compareTo(BigDecimal.ZERO) > 0)
                         ? pack.getDiscountPrice() : pack.getPackPrice();
@@ -87,8 +100,11 @@ public class OrderService {
             } else {
                 if (product.getStockQuantity() < qty)
                     throw new BusinessValidationException("Insufficient stock for " + product.getName());
-                product.setStockQuantity(product.getStockQuantity() - qty);
-                if (product.getStockQuantity() == 0) product.setStatus(ProductStatus.OUT_OF_STOCK);
+                if (deductStockNow) {
+                    int remaining = product.getStockQuantity() - qty;
+                    product.setStockQuantity(remaining);
+                    if (remaining == 0) product.setStatus(ProductStatus.OUT_OF_STOCK);
+                }
                 origPrice = product.getBasePrice();
                 effPrice = (product.getDiscountPrice() != null && product.getDiscountPrice().compareTo(BigDecimal.ZERO) > 0)
                         ? product.getDiscountPrice() : product.getBasePrice();
@@ -153,6 +169,45 @@ public class OrderService {
         return orderMapper.toResponse(savedOrder);
     }
 
+    private void adjustStockForOrder(Order order, boolean deduct) {
+        for (OrderItem item : order.getItems()) {
+            Product product = productRepository.findById(item.getProductId()).orElse(null);
+            if (product == null) continue;
+            int qty = item.getQuantity();
+            ProductPack matchedPack = (item.getPackName() != null && !item.getPackName().isBlank() && !"Single Piece".equalsIgnoreCase(item.getPackName()))
+                    ? product.getPacks().stream().filter(p -> item.getPackName().equalsIgnoreCase(p.getPackName())).findFirst().orElse(null)
+                    : null;
+
+            if (matchedPack != null) {
+                if (deduct) {
+                    if (matchedPack.getStockQuantity() < qty) {
+                        throw new BusinessValidationException("Insufficient pack stock for " + product.getName());
+                    }
+                    matchedPack.setStockQuantity(matchedPack.getStockQuantity() - qty);
+                } else {
+                    matchedPack.setStockQuantity(matchedPack.getStockQuantity() + qty);
+                }
+            } else {
+                if (deduct) {
+                    if (product.getStockQuantity() < qty) {
+                        throw new BusinessValidationException("Insufficient stock for " + product.getName());
+                    }
+                    int nextQty = product.getStockQuantity() - qty;
+                    product.setStockQuantity(nextQty);
+                    if (nextQty == 0) {
+                        product.setStatus(ProductStatus.OUT_OF_STOCK);
+                    }
+                } else {
+                    int nextQty = product.getStockQuantity() + qty;
+                    product.setStockQuantity(nextQty);
+                    if (nextQty > 0 && product.getStatus() == ProductStatus.OUT_OF_STOCK) {
+                        product.setStatus(ProductStatus.ACTIVE);
+                    }
+                }
+            }
+        }
+    }
+
     @Transactional(readOnly = true)
     public Page<OrderResponse> getAllOrders(OrderStatus status, Pageable pageable) {
         return (status != null ? orderRepository.findByStatusOrderByCreatedAtDesc(status, pageable)
@@ -168,7 +223,16 @@ public class OrderService {
     @Transactional
     public OrderResponse updateOrderStatus(Long id, OrderStatus status, String trackingId, String courierPartner) {
         Order o = orderRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        OrderStatus previousStatus = o.getStatus();
+        boolean stockAlreadyReserved = (o.getPaymentMethod() == PaymentMethod.ONLINE) || CONFIRMED_OR_LATER.contains(previousStatus);
+
         if (status != null) {
+            boolean movingToConfirmedOrLater = CONFIRMED_OR_LATER.contains(status);
+            if (movingToConfirmedOrLater && !stockAlreadyReserved) {
+                adjustStockForOrder(o, true);
+            } else if (status == OrderStatus.CANCELLED && stockAlreadyReserved && previousStatus != OrderStatus.CANCELLED) {
+                adjustStockForOrder(o, false);
+            }
             o.setStatus(status);
             if (status == OrderStatus.DELIVERED && o.getPaymentMethod() == PaymentMethod.COD) {
                 o.setPaymentStatus(PaymentStatus.PAID);
