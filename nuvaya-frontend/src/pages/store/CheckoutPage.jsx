@@ -54,7 +54,8 @@ export default function CheckoutPage() {
   const effectiveDeliveryCharges = Number(deliveryCharges || 0) + fastDeliveryFee;
   const baseOrderTotal = Math.max(0, Number(subtotal || 0) - Number(discounts || 0)) + effectiveDeliveryCharges;
   const codEligible = codEnabled && baseOrderTotal < 300;
-  const appliedCodFee = (paymentMethod === 'COD' && codEligible) ? codFee : 0;
+  const codNominalFee = (paymentMethod === 'COD' && codEligible) ? 35 : 0;
+  const appliedCodFee = (paymentMethod === 'COD' && codEligible) ? (codFee + codNominalFee) : 0;
   const finalPayable = baseOrderTotal + appliedCodFee;
 
   useEffect(() => {
@@ -325,7 +326,7 @@ export default function CheckoutPage() {
                   <div>
                     <div style={{ fontWeight: 700, fontSize: '0.94rem', color: 'var(--brand-plum)' }}>Cash on Delivery (COD)</div>
                     <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-                      {codFee > 0 ? `Pay in cash on delivery (+₹${codFee} COD handling fee)` : 'Pay in cash when your parcel arrives at your doorstep'}
+                      `Pay in cash on delivery (+₹${35 + codFee} nominal COD fee over delivery charges)`
                     </div>
                   </div>
                 </div>
@@ -404,7 +405,7 @@ export default function CheckoutPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Subtotal</span><span>₹{subtotal.toLocaleString('en-IN')}</span></div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Delivery Charges{deliveryType === 'EXPRESS' ? ' (Fast +₹40)' : ''}</span><span>{effectiveDeliveryCharges === 0 ? 'FREE' : `₹${effectiveDeliveryCharges}`}</span></div>
           {appliedCodFee > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>COD Handling Fee</span><span>₹{appliedCodFee}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>COD Nominal Charge</span><span>₹{appliedCodFee}</span></div>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', color: '#1E6F50' }}><span>Discounts</span><span>-₹{discounts.toLocaleString('en-IN')}</span></div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '1.18rem', color: 'var(--brand-plum)', paddingTop: 8 }}>

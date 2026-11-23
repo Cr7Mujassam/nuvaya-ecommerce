@@ -134,8 +134,12 @@ public class OrderService {
         if (pm == PaymentMethod.COD && orderBeforeCodFee.compareTo(BigDecimal.valueOf(300)) >= 0) {
             throw new BusinessValidationException("Cash on Delivery is available only for orders below ₹300. Please choose Online Payment (Razorpay) or WhatsApp.");
         }
-        if (pm == PaymentMethod.COD && settings.getCodHandlingFee() != null && settings.getCodHandlingFee().compareTo(BigDecimal.ZERO) > 0) {
-            deliveryTotal = deliveryTotal.add(settings.getCodHandlingFee());
+        BigDecimal codNominalFee = BigDecimal.valueOf(35);
+        if (pm == PaymentMethod.COD) {
+            deliveryTotal = deliveryTotal.add(codNominalFee);
+            if (settings.getCodHandlingFee() != null && settings.getCodHandlingFee().compareTo(BigDecimal.ZERO) > 0) {
+                deliveryTotal = deliveryTotal.add(settings.getCodHandlingFee());
+            }
         }
         order.setSubtotal(subtotal);
         order.setDiscountAmount(totalDiscount);
