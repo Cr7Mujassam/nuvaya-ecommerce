@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CreditCard, Banknote, MessageCircle, ShieldCheck } from 'lucide-react';
 import axiosClient from '../../api/axiosClient';
 import { useCart } from '../../context/CartContext';
 import { buildWhatsAppCheckoutUrl } from '../../utils/whatsappBuilder';
+import { trackMetaInitiateCheckout, trackMetaPurchase } from '../../utils/metaPixel';
 
 function loadRazorpayScript() {
   return new Promise((resolve) => {
@@ -50,6 +51,18 @@ export default function CheckoutPage() {
 
   const appliedCodFee = paymentMethod === 'COD' ? codFee : 0;
   const finalPayable = Number(totalAmount) + appliedCodFee;
+  const initiatedRef = useRef(false);
+
+  useEffect(() => {
+    if (items.length > 0 && !initiatedRef.current) {
+      initiatedRef.current = true;
+      trackMetaInitiateCheckout({
+        value: finalPayable,
+        contentIds: items.map((i) => i.productId),
+        numItems: items.reduce((s, i) => s + i.quantity, 0),
+      });
+    }
+  }, [items, finalPayable]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -97,6 +110,12 @@ export default function CheckoutPage() {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
               });
+              trackMetaPurchase({
+                value: Number(order.finalAmount ?? finalPayable),
+                contentIds: (order.items || items).map((i) => i.productSku || i.productId),
+                numItems: (order.items || items).reduce((s, i) => s + i.quantity, 0),
+                orderId: order.orderReference,
+              });
               clearCart();
               navigate(`/order-submitted?ref=${order.orderReference}&method=ONLINE&paid=1`);
             } catch (verifyErr) {
@@ -136,6 +155,14 @@ export default function CheckoutPage() {
         window.open(waUrl, '_blank', 'noopener,noreferrer');
       }
 
+      if (paymentMethod === 'COD') {
+        trackMetaPurchase({
+          value: Number(order.finalAmount ?? finalPayable),
+          contentIds: (order.items || items).map((i) => i.productSku || i.productId),
+          numItems: (order.items || items).reduce((s, i) => s + i.quantity, 0),
+          orderId: order.orderReference,
+        });
+      }
       clearCart();
       navigate(`/order-submitted?ref=${order.orderReference}&method=${paymentMethod}`);
     } catch (err) {

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useSearchParams, useLocation, Link } from 'react-router-dom';
 import axiosClient from './api/axiosClient';
+import { trackMetaPageView } from './utils/metaPixel';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import WishlistPage from './pages/store/WishlistPage';
@@ -47,6 +48,7 @@ function PageViewTracker() {
   useEffect(() => {
     const fullPath = `${location.pathname}${location.search}`;
     if (location.pathname.startsWith("/admin")) return;
+    trackMetaPageView();
     let vid = localStorage.getItem("nuvaya_vid");
     if (!vid) {
       vid = `v_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
