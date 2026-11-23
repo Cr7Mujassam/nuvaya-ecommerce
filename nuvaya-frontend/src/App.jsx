@@ -7,6 +7,7 @@ import { WishlistProvider } from './context/WishlistContext';
 import WishlistPage from './pages/store/WishlistPage';
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
+import NuvayaHelperChat from './components/common/NuvayaHelperChat';
 import CartDrawer from './components/cart/CartDrawer';
 import HomePage from './pages/store/HomePage';
 import ShopPage from './pages/store/ShopPage';
@@ -85,6 +86,7 @@ export default function App() {
           </Routes>
         </main>
         <Footer />
+        <NuvayaHelperChat />
       </CartProvider>
     </WishlistProvider>
     </BrowserRouter>
