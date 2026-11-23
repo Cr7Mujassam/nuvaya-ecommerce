@@ -1,4 +1,4 @@
-const PIXEL_ID = (import.meta.env.VITE_META_PIXEL_ID || '').trim();
+const PIXEL_ID = (import.meta.env.VITE_META_PIXEL_ID || '1500161235314497').trim();
 let initialized = false;
 
 export function initMetaPixel() {
