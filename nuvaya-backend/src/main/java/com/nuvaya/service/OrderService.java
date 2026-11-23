@@ -121,6 +121,19 @@ public class OrderService {
         if (settings.isFreeDeliveryThresholdEnabled() && net.compareTo(settings.getFreeDeliveryThreshold()) >= 0) {
             deliveryTotal = BigDecimal.ZERO;
         }
+        boolean fastDelivery = "EXPRESS".equalsIgnoreCase(request.getDeliveryType()) || "FAST".equalsIgnoreCase(request.getDeliveryType());
+        BigDecimal fastDeliveryFee = BigDecimal.valueOf(40);
+        if (fastDelivery) {
+            deliveryTotal = deliveryTotal.add(fastDeliveryFee);
+            String existingNotes = order.getOrderNotes() != null ? order.getOrderNotes().trim() : "";
+            if (!existingNotes.contains("Fast Delivery")) {
+                order.setOrderNotes(existingNotes.isEmpty() ? "Delivery Option: Fast Delivery (+₹40)" : existingNotes + " | Delivery Option: Fast Delivery (+₹40)");
+            }
+        }
+        BigDecimal orderBeforeCodFee = net.add(deliveryTotal);
+        if (pm == PaymentMethod.COD && orderBeforeCodFee.compareTo(BigDecimal.valueOf(300)) >= 0) {
+            throw new BusinessValidationException("Cash on Delivery is available only for orders below ₹300. Please choose Online Payment (Razorpay) or WhatsApp.");
+        }
         if (pm == PaymentMethod.COD && settings.getCodHandlingFee() != null && settings.getCodHandlingFee().compareTo(BigDecimal.ZERO) > 0) {
             deliveryTotal = deliveryTotal.add(settings.getCodHandlingFee());
         }

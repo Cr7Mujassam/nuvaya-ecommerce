@@ -35,6 +35,7 @@ export default function CheckoutPage() {
   const codEnabled = storeSettings?.codEnabled !== false;
   const codFee = Number(storeSettings?.codHandlingFee || 0);
 
+  const [deliveryType, setDeliveryType] = useState('STANDARD');
   const [paymentMethod, setPaymentMethod] = useState(onlineEnabled ? 'ONLINE' : codEnabled ? 'COD' : 'WHATSAPP');
   const [form, setForm] = useState({
     customerName: '',
@@ -49,8 +50,18 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const appliedCodFee = paymentMethod === 'COD' ? codFee : 0;
-  const finalPayable = Number(totalAmount) + appliedCodFee;
+  const fastDeliveryFee = deliveryType === 'EXPRESS' ? 40 : 0;
+  const effectiveDeliveryCharges = Number(deliveryCharges || 0) + fastDeliveryFee;
+  const baseOrderTotal = Math.max(0, Number(subtotal || 0) - Number(discounts || 0)) + effectiveDeliveryCharges;
+  const codEligible = codEnabled && baseOrderTotal < 300;
+  const appliedCodFee = (paymentMethod === 'COD' && codEligible) ? codFee : 0;
+  const finalPayable = baseOrderTotal + appliedCodFee;
+
+  useEffect(() => {
+    if (paymentMethod === 'COD' && !codEligible) {
+      setPaymentMethod(onlineEnabled ? 'ONLINE' : 'WHATSAPP');
+    }
+  }, [paymentMethod, codEligible, onlineEnabled]);
   const initiatedRef = useRef(false);
 
   useEffect(() => {
@@ -71,6 +82,7 @@ export default function CheckoutPage() {
     try {
       const { data: order } = await axiosClient.post('/orders', {
         ...form,
+        deliveryType,
         paymentMethod,
         items: items.map((i) => ({
           productId: i.productId,
@@ -200,6 +212,68 @@ export default function CheckoutPage() {
           <textarea rows={2} placeholder="Optional Order Notes" value={form.orderNotes} onChange={(e) => setForm({ ...form, orderNotes: e.target.value })} style={inp} />
         </div>
 
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.14em', color: 'var(--brand-gold-dark)', textTransform: 'uppercase', marginBottom: 10 }}>
+            Delivery Option
+          </div>
+          {!codEligible && codEnabled && (
+            <div style={{ fontSize: '0.78rem', color: 'var(--brand-plum)', background: 'var(--bg-cream)', border: '1px solid var(--border-sand)', padding: '8px 12px', borderRadius: 8, marginBottom: 8 }}>
+              Cash on Delivery is available only for orders below ₹300. Please complete orders of ₹300 or above via Online Payment (Razorpay) or WhatsApp.
+            </div>
+          )}
+          <div style={{ display: 'grid', gap: 10 }}>
+            <div
+              onClick={() => setDeliveryType('STANDARD')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 16px',
+                borderRadius: 12,
+                border: deliveryType === 'STANDARD' ? '2px solid var(--brand-plum)' : '1px solid var(--border-sand)',
+                background: deliveryType === 'STANDARD' ? 'var(--bg-cream)' : '#fff',
+                cursor: 'pointer'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <input type="radio" name="deliveryType" checked={deliveryType === 'STANDARD'} onChange={() => setDeliveryType('STANDARD')} />
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--brand-plum)' }}>Standard Delivery</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Regular pan-India courier dispatch</div>
+                </div>
+              </div>
+              <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--brand-plum)' }}>
+                {Number(deliveryCharges || 0) === 0 ? 'FREE' : `₹${Number(deliveryCharges || 0)}`}
+              </span>
+            </div>
+
+            <div
+              onClick={() => setDeliveryType('EXPRESS')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 16px',
+                borderRadius: 12,
+                border: deliveryType === 'EXPRESS' ? '2px solid var(--brand-plum)' : '1px solid var(--border-sand)',
+                background: deliveryType === 'EXPRESS' ? 'var(--bg-cream)' : '#fff',
+                cursor: 'pointer'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <input type="radio" name="deliveryType" checked={deliveryType === 'EXPRESS'} onChange={() => setDeliveryType('EXPRESS')} />
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--brand-plum)' }}>Fast Delivery (+₹40)</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Priority dispatch (+₹40 added to standard delivery)</div>
+                </div>
+              </div>
+              <span style={{ fontWeight: 800, fontSize: '0.85rem', color: '#1E6F50' }}>
+                +₹40
+              </span>
+            </div>
+          </div>
+        </div>
+
         <div style={{ marginTop: 22 }}>
           <div style={{ fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.14em', color: 'var(--brand-gold-dark)', textTransform: 'uppercase', marginBottom: 10 }}>
             Choose Payment Option
@@ -231,7 +305,7 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {codEnabled && (
+            {codEligible && (
               <div
                 onClick={() => setPaymentMethod('COD')}
                 style={{
@@ -328,7 +402,7 @@ export default function CheckoutPage() {
         <hr style={{ border: 'none', borderTop: '1px solid var(--border-sand)', margin: '14px 0' }} />
         <div style={{ display: 'grid', gap: 8 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Subtotal</span><span>₹{subtotal.toLocaleString('en-IN')}</span></div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Delivery Charges</span><span>{deliveryCharges === 0 ? 'FREE' : `₹${deliveryCharges}`}</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Delivery Charges{deliveryType === 'EXPRESS' ? ' (Fast +₹40)' : ''}</span><span>{effectiveDeliveryCharges === 0 ? 'FREE' : `₹${effectiveDeliveryCharges}`}</span></div>
           {appliedCodFee > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>COD Handling Fee</span><span>₹{appliedCodFee}</span></div>
           )}
