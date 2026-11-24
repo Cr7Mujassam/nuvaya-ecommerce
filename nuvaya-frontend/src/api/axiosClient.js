@@ -65,15 +65,32 @@ export const FALLBACK_IMAGE =
     </svg>`
   );
 
+export const extractGoogleDriveFileId = (rawUrl) => {
+  if (!rawUrl || typeof rawUrl !== 'string') return null;
+  const trimmed = rawUrl.trim();
+  const filePathMatch = trimmed.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (filePathMatch) return filePathMatch[1];
+  const ucMatch = trimmed.match(/drive\.google\.com\/(?:open|uc|thumbnail)\?(?:[^#]*&)?id=([a-zA-Z0-9_-]+)/);
+  if (ucMatch) return ucMatch[1];
+  const lh3Match = trimmed.match(/lh3\.googleusercontent\.com\/d\/([a-zA-Z0-9_-]+)/);
+  if (lh3Match) return lh3Match[1];
+  return null;
+};
+
 export const resolveAssetUrl = (url) => {
   if (!url) return FALLBACK_IMAGE;
-  if (url.startsWith('data:')) return url;
-  if (url.startsWith('http://localhost:8083/uploads/')) {
-    return url.replace('http://localhost:8083', '');
+  const trimmed = url.trim();
+  if (trimmed.startsWith('data:')) return trimmed;
+  const driveId = extractGoogleDriveFileId(trimmed);
+  if (driveId) {
+    return `https://lh3.googleusercontent.com/d/${driveId}`;
   }
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  if (url.startsWith('/uploads/') || url.startsWith('/campaigns/')) return url;
-  return `${API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+  if (trimmed.startsWith('http://localhost:8083/uploads/')) {
+    return trimmed.replace('http://localhost:8083', '');
+  }
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+  if (trimmed.startsWith('/uploads/') || trimmed.startsWith('/campaigns/')) return trimmed;
+  return `${API_BASE_URL}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
 };
 
 export default axiosClient;

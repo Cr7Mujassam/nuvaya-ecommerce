@@ -30,9 +30,20 @@ public final class InputSanitizer {
         return s.length() > maxLen ? s.substring(0, maxLen) : s;
     }
 
+    private static final Pattern GDRIVE_FILE_PATH = Pattern.compile("drive\\.google\\.com/file/d/([a-zA-Z0-9_-]+)");
+    private static final Pattern GDRIVE_QUERY_ID = Pattern.compile("drive\\.google\\.com/(?:open|uc|thumbnail)\\?(?:[^#]*&)?id=([a-zA-Z0-9_-]+)");
+
     public static String sanitizeUrl(String raw) {
         String s = sanitizeText(raw);
         if (s == null || s.isEmpty()) return "";
+        var m1 = GDRIVE_FILE_PATH.matcher(s);
+        if (m1.find()) {
+            return "https://lh3.googleusercontent.com/d/" + m1.group(1);
+        }
+        var m2 = GDRIVE_QUERY_ID.matcher(s);
+        if (m2.find()) {
+            return "https://lh3.googleusercontent.com/d/" + m2.group(1);
+        }
         String lower = s.toLowerCase(Locale.ROOT);
         if (lower.startsWith("http://") || lower.startsWith("https://") || s.startsWith("/")) {
             return s;
