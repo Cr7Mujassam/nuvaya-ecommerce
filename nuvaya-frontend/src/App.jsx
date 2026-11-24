@@ -7,6 +7,7 @@ import { WishlistProvider } from './context/WishlistContext';
 import WishlistPage from './pages/store/WishlistPage';
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
+import GlobalLoadingOverlay from './components/common/GlobalLoadingOverlay';
 import NuvayaHelperChat from './components/common/NuvayaHelperChat';
 import CartDrawer from './components/cart/CartDrawer';
 import HomePage from './pages/store/HomePage';
@@ -76,6 +77,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <GlobalLoadingOverlay />
       <PageViewTracker />
       <WishlistProvider>
       <CartProvider>

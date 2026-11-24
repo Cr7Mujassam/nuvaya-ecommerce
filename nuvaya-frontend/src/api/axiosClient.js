@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { setGlobalLoading } from '../components/common/GlobalLoadingOverlay';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8083';
 
@@ -8,17 +9,42 @@ const axiosClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-axiosClient.interceptors.request.use((config) => {
-  const token = sessionStorage.getItem('nuvaya_admin_jwt');
-  if (token && config.url?.startsWith('/admin')) {
-    config.headers.Authorization = `Bearer ${token}`;
+const shouldShowLoader = (config) => {
+  const url = config?.url || '';
+  return !url.includes('/store/track');
+};
+
+axiosClient.interceptors.request.use(
+  (config) => {
+    if (shouldShowLoader(config)) {
+      config._trackedLoading = true;
+      setGlobalLoading(1);
+    }
+    const token = sessionStorage.getItem('nuvaya_admin_jwt');
+    if (token && config.url?.startsWith('/admin')) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (err) => {
+    if (err?.config?._trackedLoading) {
+      setGlobalLoading(-1);
+    }
+    return Promise.reject(err);
   }
-  return config;
-});
+);
 
 axiosClient.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    if (res?.config?._trackedLoading) {
+      setGlobalLoading(-1);
+    }
+    return res;
+  },
   (err) => {
+    if (err?.config?._trackedLoading) {
+      setGlobalLoading(-1);
+    }
     if ((err.response?.status === 401 || err.response?.status === 403) && window.location.pathname.startsWith('/admin') && !window.location.pathname.includes('/login')) {
       sessionStorage.removeItem('nuvaya_admin_jwt');
       window.location.href = '/admin/login';
