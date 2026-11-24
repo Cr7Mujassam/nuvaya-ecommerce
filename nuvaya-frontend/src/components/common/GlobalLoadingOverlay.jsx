@@ -23,44 +23,51 @@ export default function GlobalLoadingOverlay() {
     <>
       <style>{`@keyframes nuvayaSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
       <div
+        role="status"
         aria-live="polite"
         aria-label="Loading"
         style={{
           position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
+          inset: 0,
           zIndex: 2000,
-          pointerEvents: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(35, 16, 25, 0.28)',
+          backdropFilter: 'blur(6px)',
+          WebkitBackdropFilter: 'blur(6px)',
+          pointerEvents: 'auto',
         }}
       >
         <div
           style={{
-            height: 3,
-            width: '100%',
-            background: 'linear-gradient(90deg, var(--brand-gold), var(--brand-plum), var(--brand-gold))',
+            display: 'inline-flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 10,
+            padding: '22px 30px',
+            borderRadius: 18,
+            background: '#FAF6EE',
+            color: 'var(--brand-plum)',
+            border: '1.5px solid var(--brand-gold)',
+            boxShadow: '0 20px 50px rgba(35, 16, 25, 0.28)',
           }}
-        />
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10 }}>
-          <div
+        >
+          <Loader2
+            size={32}
+            color="var(--brand-plum)"
+            style={{ animation: 'nuvayaSpin 0.85s linear infinite' }}
+          />
+          <span
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '7px 14px',
-              borderRadius: 999,
-              background: 'var(--brand-plum)',
-              color: '#FAF6EE',
-              border: '1px solid var(--brand-gold)',
-              boxShadow: '0 8px 24px rgba(35, 16, 25, 0.22)',
-              fontSize: '0.78rem',
+              fontSize: '0.84rem',
               fontWeight: 700,
-              letterSpacing: '0.04em',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
             }}
           >
-            <Loader2 size={15} color="var(--brand-gold)" style={{ animation: 'nuvayaSpin 0.85s linear infinite' }} />
-            <span>Loading...</span>
-          </div>
+            Loading...
+          </span>
         </div>
       </div>
     </>
