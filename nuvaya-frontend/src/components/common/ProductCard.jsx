@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Star, Heart } from 'lucide-react';
+import { ShoppingBag, Star, Heart, Share2, Check } from 'lucide-react';
 import { useWishlist } from '../../context/WishlistContext';
 import { FALLBACK_IMAGE, resolveAssetUrl } from '../../api/axiosClient';
 import { useCart } from '../../context/CartContext';
@@ -14,6 +14,7 @@ export default function ProductCard({ product }) {
   const [selectedPack, setSelectedPack] = useState(null);
   const [activeImgIdx, setActiveImgIdx] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [copiedShare, setCopiedShare] = useState(false);
   const trackRef = useRef(null);
 
   const images = product.images || [];
@@ -119,6 +120,29 @@ export default function ProductCard({ product }) {
     }
   };
 
+  const handleShare = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const shareUrl = `${window.location.origin}/product/${product.id}`;
+    const shareTitle = `${product.name} — NuVaya`;
+    const shareText = `Check out ${product.name} on NuVaya: ${shareUrl}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
+        return;
+      }
+    } catch (err) {
+      if (err?.name === "AbortError") return;
+    }
+    try {
+      await navigator.clipboard?.writeText(shareUrl);
+      setCopiedShare(true);
+      setTimeout(() => setCopiedShare(false), 1800);
+    } catch {
+      window.prompt("Copy product link:", shareUrl);
+    }
+  };
+
   const regularPrice = selectedPack
     ? Number(selectedPack.packPrice)
     : baseRegularPrice;
@@ -204,7 +228,7 @@ export default function ProductCard({ product }) {
           }}
           style={{
             position: 'absolute',
-            top: discountPct > 0 ? 44 : 12,
+top: discountPct > 0 ? 44 : 12,
             right: 12,
             width: 34,
             height: 34,
@@ -223,6 +247,35 @@ export default function ProductCard({ product }) {
           }}
         >
           <Heart size={16} fill={liked ? '#9E2A2B' : 'transparent'} strokeWidth={1.9} />
+        </button>
+
+        {/* Share Catalog Item Button */}
+        <button
+          type="button"
+          aria-label="Share product"
+          title={copiedShare ? "Link copied!" : "Share product"}
+          onClick={handleShare}
+          style={{
+            position: 'absolute',
+            top: discountPct > 0 ? 84 : 52,
+            right: 12,
+            width: 34,
+            height: 34,
+            borderRadius: '50%',
+            background: copiedShare ? '#27101B' : 'rgba(251, 248, 243, 0.94)',
+            backdropFilter: 'blur(6px)',
+            border: '1px solid rgba(198,161,99,0.65)',
+            color: copiedShare ? '#FAF6EE' : 'var(--brand-plum)',
+            display: 'grid',
+            placeItems: 'center',
+            cursor: 'pointer',
+            boxShadow: '0 3px 10px rgba(39,16,27,0.14)',
+            zIndex: 4,
+            padding: 0,
+            transition: 'all 0.2s ease'
+          }}
+        >
+          {copiedShare ? <Check size={15} strokeWidth={2.2} /> : <Share2 size={15} strokeWidth={1.9} />}
         </button>
 
         {/* Top Right Discount Pill */}

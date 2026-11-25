@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import ProductCard from '../../components/common/ProductCard';
 import axiosClient, { resolveAssetUrl } from '../../api/axiosClient';
-import { Heart } from 'lucide-react';
+import { Heart, Share2, Check } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import ProductReviewsSection from '../../components/product/ProductReviewsSection';
@@ -21,6 +21,7 @@ export default function ProductDetailPage() {
   const [mixedColors, setMixedColors] = useState([]);
   const [qty, setQty] = useState(1);
   const [buyingNow, setBuyingNow] = useState(false);
+  const [copiedShare, setCopiedShare] = useState(false);
   const galleryRef = useRef(null);
   const inlineCtaRef = useRef(null);
   const relatedRef = useRef(null);
@@ -155,6 +156,27 @@ export default function ProductDetailPage() {
       navigate('/checkout');
     } finally {
       setBuyingNow(false);
+    }
+  };
+
+  const handleShareProduct = async () => {
+    const shareUrl = window.location.href;
+    const shareTitle = `${product.name} — NuVaya`;
+    const shareText = `Check out ${product.name} on NuVaya: ${shareUrl}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
+        return;
+      }
+    } catch (err) {
+      if (err?.name === "AbortError") return;
+    }
+    try {
+      await navigator.clipboard?.writeText(shareUrl);
+      setCopiedShare(true);
+      setTimeout(() => setCopiedShare(false), 1800);
+    } catch {
+      window.prompt("Copy product link:", shareUrl);
     }
   };
 
@@ -412,6 +434,29 @@ export default function ProductDetailPage() {
             }}
           >
             <Heart size={18} fill={isWishlisted(product.id) ? '#9E2A2B' : 'transparent'} />
+          </button>
+          <button
+            type="button"
+            onClick={handleShareProduct}
+            aria-label="Share product"
+            title={copiedShare ? "Link copied!" : "Share product"}
+            style={{
+              padding: '0 16px',
+              minHeight: 46,
+              borderRadius: 999,
+              border: '1px solid var(--brand-gold)',
+              background: copiedShare ? 'var(--brand-plum)' : '#FFFFFF',
+              color: copiedShare ? '#FAF6EE' : 'var(--brand-plum)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              cursor: 'pointer',
+              fontWeight: 600,
+              fontSize: '0.85rem'
+            }}
+          >
+            {copiedShare ? <><Check size={16} /> Copied</> : <><Share2 size={16} /> Share</>}
           </button>
         </div>
 
