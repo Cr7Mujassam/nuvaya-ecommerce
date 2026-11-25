@@ -279,7 +279,7 @@ export default function HomePage() {
               color: 'var(--brand-gold-dark)',
               fontWeight: 700
             }}>
-              <Sparkles size={13} /> Hyderabad Atelier • Signature Collection
+              <Sparkles size={13} /> Starts at ₹169 • Free Pan-India Delivery Above ₹499
             </div>
 
             <h1 style={{ fontSize: 'clamp(2.8rem, 5.4vw, 4.5rem)', lineHeight: 1.05, margin: '20px 0 22px', color: 'var(--brand-plum)', fontWeight: 600 }}>
@@ -294,19 +294,19 @@ export default function HomePage() {
             </p>
 
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 38 }}>
-              <Link to="/shop" className="btn-primary">
-                Shop Collection <ArrowRight size={15} />
-              </Link>
-              <Link to="/shop?category=best-sellers" className="btn-outline">
-                Explore Value Packs
+              <a href="#featured-catalog" className="btn-primary">
+                Shop Collection From ₹169 <ArrowRight size={15} />
+              </a>
+              <Link to="/shop?bestSeller=true" className="btn-outline">
+                Shop Best Sellers &amp; Packs
               </Link>
             </div>
 
             <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap', paddingTop: 22, borderTop: '1px solid rgba(198,161,99,0.35)' }}>
               {[
-                { label: 'Breathable Weaves', sub: 'Modal, Chiffon & Nidha' },
-                { label: 'Curated Bundles', sub: 'Save on Pack of 3 & 5' },
-                { label: 'Pan-India Express', sub: 'Dispatched from Hyderabad' },
+                { label: 'UPI, Cards & COD', sub: 'COD under ₹300 • Instant Razorpay' },
+                { label: 'Bundle Savings', sub: 'Extra savings on Pack of 3 & 5' },
+                { label: 'Fast Hyderabad Dispatch', sub: 'Live courier tracking included' },
               ].map((stat) => (
                 <div key={stat.label}>
                   <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--brand-plum)', letterSpacing: '0.03em' }}>{stat.label}</div>
@@ -356,8 +356,49 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* High-Converting Bundle & Offer Strip */}
+      <section style={{ maxWidth: 1240, margin: '20px auto 44px', padding: '0 20px' }}>
+        <div style={{
+          background: 'linear-gradient(135deg, #27101B 0%, #3E192B 100%)',
+          border: '1.5px solid var(--brand-gold)',
+          borderRadius: 18,
+          padding: '22px 26px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          color: '#FAF6EE'
+        }}>
+          <div>
+            <div style={{ fontSize: '0.7rem', letterSpacing: '0.18em', color: 'var(--brand-gold)', fontWeight: 800, textTransform: 'uppercase' }}>
+              MOST POPULAR WITH REPEAT BUYERS
+            </div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, marginTop: 3 }}>
+              Unlock Free Pan-India Delivery on Orders ₹499+ &amp; Save More on Pack of 3 / Pack of 5 Combos
+            </div>
+          </div>
+          <Link
+            to="/shop"
+            style={{
+              padding: '11px 22px',
+              borderRadius: 999,
+              background: 'var(--brand-gold)',
+              color: '#231019',
+              fontWeight: 800,
+              fontSize: '0.76rem',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            Build Your Combo →
+          </Link>
+        </div>
+      </section>
+
       {/* Featured & New Arrivals */}
-      <section style={{ maxWidth: 1240, margin: '56px auto 76px', padding: '0 20px' }}>
+      <section id="featured-catalog" style={{ maxWidth: 1240, margin: '36px auto 76px', padding: '0 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 30, flexWrap: 'wrap', gap: 12 }}>
           <div>
             <div style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--brand-gold-dark)', fontWeight: 700 }}>

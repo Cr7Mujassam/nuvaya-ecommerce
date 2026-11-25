@@ -15,6 +15,7 @@ export default function ProductCard({ product }) {
   const [activeImgIdx, setActiveImgIdx] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
+  const [buyingCard, setBuyingCard] = useState(false);
   const trackRef = useRef(null);
 
   const images = product.images || [];
@@ -117,6 +118,28 @@ export default function ProductCard({ product }) {
     const idx = Math.round(el.scrollLeft / el.clientWidth);
     if (idx !== activeImgIdx && idx >= 0 && idx < images.length) {
       setActiveImgIdx(idx);
+    }
+  };
+
+  const buildCardItemPayload = () => ({
+    productId: product.id,
+    packId: selectedPack?.id || null,
+    selectedColor: selectedPack?.allowMixedColors ? 'Mixed Pack' : selectedColor,
+    mixedColors: selectedPack?.allowMixedColors
+      ? Array(selectedPack.pieceCount).fill(selectedColor || product.colors?.[0]?.name || 'Black')
+      : [],
+    selectedSize: product.availableSizes?.[0] || null,
+    quantity: 1,
+  });
+
+  const handleCardBuyNow = async () => {
+    if (buyingCard) return;
+    setBuyingCard(true);
+    try {
+      await addItem(buildCardItemPayload());
+      navigate('/checkout');
+    } finally {
+      setBuyingCard(false);
     }
   };
 
@@ -443,24 +466,26 @@ top: discountPct > 0 ? 44 : 12,
           </div>
         )}
 
-        {/* Add to Bag CTA */}
-        <button
-          type="button"
-          className="btn-primary"
-          style={{ marginTop: 'auto', padding: '10px 14px', width: '100%' }}
-          onClick={() => addItem({
-            productId: product.id,
-            packId: selectedPack?.id || null,
-            selectedColor: selectedPack?.allowMixedColors ? 'Mixed Pack' : selectedColor,
-            mixedColors: selectedPack?.allowMixedColors
-              ? Array(selectedPack.pieceCount).fill(selectedColor || product.colors?.[0]?.name || 'Black')
-              : [],
-            selectedSize: product.availableSizes?.[0] || null,
-            quantity: 1,
-          })}
-        >
-          <ShoppingBag size={14} /> Add {selectedPack ? selectedPack.packName : 'Pack of 1'}
-        </button>
+        {/* Dual Conversion CTAs: Add to Bag + 1-Tap Buy Now */}
+        <div style={{ marginTop: 'auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <button
+            type="button"
+            className="btn-outline"
+            style={{ padding: '10px 10px', width: '100%', fontSize: '0.72rem', borderRadius: 999, justifyContent: 'center' }}
+            onClick={() => addItem(buildCardItemPayload())}
+          >
+            <ShoppingBag size={13} /> Add Bag
+          </button>
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={buyingCard}
+            style={{ padding: '10px 10px', width: '100%', fontSize: '0.72rem', justifyContent: 'center' }}
+            onClick={handleCardBuyNow}
+          >
+            {buyingCard ? 'Opening...' : 'Buy Now'}
+          </button>
+        </div>
       </div>
     </div>
   );
