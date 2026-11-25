@@ -5,7 +5,6 @@ import {
   LayoutDashboard, Layers, LogOut, Sparkles, AlertTriangle, CheckCircle2, ExternalLink, Pencil, X, Star, BadgeCheck, MessageSquareReply
 } from 'lucide-react';
 import axiosClient, { FALLBACK_IMAGE, resolveAssetUrl } from '../../api/axiosClient';
-import ModelHijabCustomizer from '../../components/admin/ModelHijabCustomizer';
 
 const emptyProductForm = {
   name: '',
@@ -776,27 +775,6 @@ export default function AdminDashboardPage() {
                     ))}
                   </div>
                 </div>
-
-                <ModelHijabCustomizer
-                  fabricValue={form.fabric}
-                  colors={form.colors}
-                  onSelectFabric={(fab) => setForm((prev) => ({ ...prev, fabric: fab }))}
-                  onAddColorToProduct={(col) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      colors: [...prev.colors, col],
-                    }))
-                  }
-                  onAttachImageToProduct={(imgObj) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      images: [
-                        ...prev.images,
-                        { ...imgObj, primaryImage: prev.images.length === 0 },
-                      ],
-                    }))
-                  }
-                />
 
                 <div style={boxSection}>
                   <strong style={{ display: 'block', marginBottom: 10 }}>Product Photos (Select 2–4 Photos at Once or Paste URLs)</strong>
