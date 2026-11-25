@@ -168,49 +168,6 @@ export default function ProductReviewsSection({ productId }) {
         </div>
       )}
 
-      {/* Summary + 5-to-1 Star Breakdown */}
-      <div style={{
-        background: '#FFFFFF',
-        borderRadius: 18,
-        border: '1px solid rgba(198,161,99,0.4)',
-        padding: '28px 26px',
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-        gap: 32,
-        alignItems: 'center',
-        marginBottom: 30,
-        boxShadow: '0 10px 28px -12px rgba(39,16,27,0.08)'
-      }}>
-        <div style={{ textAlign: 'center', padding: '10px 0' }}>
-          <div className="editorial" style={{ fontSize: '3.6rem', fontWeight: 700, color: 'var(--brand-plum)', lineHeight: 1 }}>
-            {total > 0 ? avg.toFixed(1) : '0.0'}
-            <span style={{ fontSize: '1.3rem', color: 'var(--text-muted)', fontWeight: 500 }}> / 5</span>
-          </div>
-          <div style={{ margin: '10px 0 8px' }}>
-            <StarRow value={avg} size={20} />
-          </div>
-          <div style={{ fontSize: '0.86rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-            {total === 0 ? 'No verified reviews yet' : `Based on ${total} approved ${total === 1 ? 'review' : 'reviews'}`}
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gap: 9 }}>
-          {[5, 4, 3, 2, 1].map((star) => {
-            const count = Number(summary.ratingBreakdown?.[star] || 0);
-            const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-            return (
-              <div key={star} style={{ display: 'grid', gridTemplateColumns: '54px 1fr 48px', alignItems: 'center', gap: 10, fontSize: '0.84rem' }}>
-                <span style={{ fontWeight: 600, color: 'var(--brand-plum)' }}>{star} ★</span>
-                <div style={{ height: 8, borderRadius: 999, background: 'var(--bg-cream)', overflow: 'hidden' }}>
-                  <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #9B773E, #C6A163)', borderRadius: 999, transition: 'width 0.35s ease' }} />
-                </div>
-                <span style={{ textAlign: 'right', color: 'var(--text-muted)', fontSize: '0.8rem' }}>{count}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Write a Review Form */}
       {showForm && (
         <form onSubmit={handleSubmit} style={{
@@ -306,6 +263,49 @@ export default function ProductReviewsSection({ productId }) {
           </div>
         </form>
       )}
+
+      {/* Summary + 5-to-1 Star Breakdown */}
+      <div style={{
+        background: '#FFFFFF',
+        borderRadius: 18,
+        border: '1px solid rgba(198,161,99,0.4)',
+        padding: '28px 26px',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+        gap: 32,
+        alignItems: 'center',
+        marginBottom: 30,
+        boxShadow: '0 10px 28px -12px rgba(39,16,27,0.08)'
+      }}>
+        <div style={{ textAlign: 'center', padding: '10px 0' }}>
+          <div className="editorial" style={{ fontSize: '3.6rem', fontWeight: 700, color: 'var(--brand-plum)', lineHeight: 1 }}>
+            {total > 0 ? avg.toFixed(1) : '0.0'}
+            <span style={{ fontSize: '1.3rem', color: 'var(--text-muted)', fontWeight: 500 }}> / 5</span>
+          </div>
+          <div style={{ margin: '10px 0 8px' }}>
+            <StarRow value={avg} size={20} />
+          </div>
+          <div style={{ fontSize: '0.86rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+            {total === 0 ? 'No verified reviews yet' : `Based on ${total} approved ${total === 1 ? 'review' : 'reviews'}`}
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gap: 9 }}>
+          {[5, 4, 3, 2, 1].map((star) => {
+            const count = Number(summary.ratingBreakdown?.[star] || 0);
+            const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+            return (
+              <div key={star} style={{ display: 'grid', gridTemplateColumns: '54px 1fr 48px', alignItems: 'center', gap: 10, fontSize: '0.84rem' }}>
+                <span style={{ fontWeight: 600, color: 'var(--brand-plum)' }}>{star} ★</span>
+                <div style={{ height: 8, borderRadius: 999, background: 'var(--bg-cream)', overflow: 'hidden' }}>
+                  <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #9B773E, #C6A163)', borderRadius: 999, transition: 'width 0.35s ease' }} />
+                </div>
+                <span style={{ textAlign: 'right', color: 'var(--text-muted)', fontSize: '0.8rem' }}>{count}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Sort & Reviews List */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
