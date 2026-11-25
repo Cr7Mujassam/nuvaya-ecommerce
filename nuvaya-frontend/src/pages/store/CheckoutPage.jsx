@@ -189,6 +189,22 @@ export default function CheckoutPage() {
 
   return (
     <div style={{ maxWidth: 1100, margin: '40px auto', padding: '0 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))', gap: 36 }}>
+      <div style={{
+        background: 'linear-gradient(135deg, #FFFDF9 0%, #F7EFE2 100%)',
+        border: '1.5px solid var(--brand-gold)',
+        borderRadius: 14,
+        padding: '14px 18px',
+        marginBottom: 18,
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 12
+      }}>
+        <ShieldCheck size={22} color="#1E6F50" style={{ flexShrink: 0, marginTop: 2 }} />
+        <div style={{ fontSize: '0.85rem', lineHeight: 1.55, color: 'var(--text-charcoal)' }}>
+          <strong style={{ color: 'var(--brand-plum)' }}>New to NuVaya? Give us one chance to earn your trust.</strong> We’ve just started our Hyderabad modest-wear label, so every single order is hand-checked before dispatch, shipped with live tracking, and backed by direct WhatsApp support from our founders.
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit} style={{ background: '#fff', padding: 28, borderRadius: 16, border: '1px solid var(--border-sand)' }}>
         <h1 style={{ fontSize: '2rem', color: 'var(--brand-plum)', marginBottom: 16 }}>Checkout &amp; Delivery</h1>
         {error && <div style={{ background: '#FDECEA', color: '#9E2A2B', padding: 12, borderRadius: 8, marginBottom: 14, fontSize: '0.88rem' }}>{error}</div>}

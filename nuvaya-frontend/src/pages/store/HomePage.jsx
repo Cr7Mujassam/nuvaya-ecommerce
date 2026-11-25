@@ -356,6 +356,67 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Heartfelt Founder Trust Message & First-Order Pledge */}
+      <section style={{ maxWidth: 1240, margin: '28px auto 12px', padding: '0 20px' }}>
+        <div style={{
+          background: 'linear-gradient(135deg, #FFFDF9 0%, #F7EFE2 100%)',
+          border: '1.5px solid var(--brand-gold)',
+          borderRadius: 20,
+          padding: '28px 30px',
+          boxShadow: '0 14px 34px -14px rgba(39,16,27,0.12)',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: 24,
+          alignItems: 'center'
+        }}>
+          <div>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '4px 12px',
+              borderRadius: 999,
+              background: 'rgba(39,16,27,0.06)',
+              color: 'var(--brand-gold-dark)',
+              fontSize: '0.68rem',
+              fontWeight: 800,
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+              marginBottom: 10
+            }}>
+              <ShieldCheck size={14} /> A Personal Promise From Our Founders
+            </div>
+            <h2 style={{ fontSize: 'clamp(1.45rem, 2.6vw, 2rem)', color: 'var(--brand-plum)', lineHeight: 1.2, marginBottom: 10 }}>
+              We’ve Just Begun — Give Us Just One Chance to Serve You
+            </h2>
+            <p style={{ color: 'var(--text-charcoal)', fontSize: '0.95rem', lineHeight: 1.7, margin: 0 }}>
+              We know trusting a new online store takes a leap of faith. NuVaya was started in Hyderabad with a simple promise: honest, breathable fabrics, neat stitching, and genuine care in every single parcel. Because we are building our name one customer at a time, we personally inspect every piece before dispatch — and if anything ever feels less than promised, message us directly on WhatsApp and we will make it right.
+            </p>
+            <div style={{ marginTop: 12, fontSize: '0.82rem', fontWeight: 700, color: 'var(--brand-plum)' }}>
+              — With gratitude, Team NuVaya (Hyderabad)
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gap: 10 }}>
+            {[
+              { title: 'Hand-Checked Before Dispatch', desc: 'Every hijab & abaya is inspected for fabric softness, stitching, and shade accuracy before packing.' },
+              { title: 'Real People, Direct WhatsApp Help', desc: 'Ask for live fabric videos or order updates anytime — no bots, just our Hyderabad team.' },
+              { title: 'Tracked Delivery & Safe Checkout', desc: 'COD on orders under ₹300, instant Razorpay UPI/Cards, and live courier tracking link.' },
+            ].map((pill) => (
+              <div key={pill.title} style={{
+                background: '#FFFFFF',
+                padding: '12px 15px',
+                borderRadius: 12,
+                border: '1px solid rgba(198,161,99,0.45)'
+              }}>
+                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--brand-plum)' }}>✓ {pill.title}</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.45 }}>{pill.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* High-Converting Bundle & Offer Strip */}
       <section style={{ maxWidth: 1240, margin: '20px auto 44px', padding: '0 20px' }}>
         <div style={{
