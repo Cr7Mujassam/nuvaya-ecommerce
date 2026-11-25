@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus, Trash2, Upload, Package, ShoppingBag, Settings,
-  LayoutDashboard, Layers, LogOut, Sparkles, AlertTriangle, CheckCircle2, ExternalLink, Pencil, X, Star, BadgeCheck, MessageSquareReply
+  LayoutDashboard, Layers, LogOut, Sparkles, AlertTriangle, CheckCircle2, ExternalLink, Pencil, X, Star, BadgeCheck, MessageSquareReply, Wallet
 } from 'lucide-react';
 import axiosClient, { FALLBACK_IMAGE, resolveAssetUrl } from '../../api/axiosClient';
 
@@ -46,6 +46,26 @@ export default function AdminDashboardPage() {
   const [settings, setSettings] = useState(null);
   const [testingEmail, setTestingEmail] = useState(false);
   const [testEmailResult, setTestEmailResult] = useState(null);
+  const EXPENSE_STORAGE_KEY = 'nuvaya_admin_expenses_v1';
+  const todayIso = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+  const [expenses, setExpenses] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('nuvaya_admin_expenses_v1') || '[]');
+      return Array.isArray(saved) ? saved : [];
+    } catch {
+      return [];
+    }
+  });
+  const [expenseForm, setExpenseForm] = useState({
+    date: todayIso,
+    founder: 'Mujassam',
+    category: 'Fabric & Sourcing',
+    title: '',
+    amount: '',
+    notes: '',
+  });
+  const [founderFilter, setFounderFilter] = useState('ALL');
+  const [dateFilter, setDateFilter] = useState('');
   const [tab, setTab] = useState('overview');
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
@@ -426,6 +446,38 @@ export default function AdminDashboardPage() {
     loadAll();
   };
 
+  const handleAddExpense = (e) => {
+    e.preventDefault();
+    const numAmt = Number(expenseForm.amount);
+    if (!expenseForm.title.trim() || !numAmt || numAmt <= 0) return;
+    const entry = {
+      id: Date.now(),
+      date: expenseForm.date || todayIso,
+      founder: expenseForm.founder || 'Mujassam',
+      category: expenseForm.category || 'General',
+      title: expenseForm.title.trim(),
+      amount: numAmt,
+      notes: expenseForm.notes.trim(),
+    };
+    const next = [entry, ...expenses].sort((a, b) => String(b.date).localeCompare(String(a.date)) || b.id - a.id);
+    setExpenses(next);
+    try { localStorage.setItem(EXPENSE_STORAGE_KEY, JSON.stringify(next)); } catch {}
+    setExpenseForm({
+      date: expenseForm.date || todayIso,
+      founder: expenseForm.founder,
+      category: expenseForm.category,
+      title: '',
+      amount: '',
+      notes: '',
+    });
+  };
+
+  const handleDeleteExpense = (id) => {
+    const next = expenses.filter((item) => item.id !== id);
+    setExpenses(next);
+    try { localStorage.setItem(EXPENSE_STORAGE_KEY, JSON.stringify(next)); } catch {}
+  };
+
   const logout = () => {
     sessionStorage.removeItem('nuvaya_admin_jwt');
     navigate('/admin/login');
@@ -476,6 +528,7 @@ export default function AdminDashboardPage() {
             { id: 'categories', label: `Categories (${categories.length})`, icon: Layers },
             { id: 'orders', label: `WhatsApp Orders (${orders.length})`, icon: ShoppingBag },
             { id: 'reviews', label: `Reviews (${reviews.length})`, icon: Star },
+            { id: 'expenses', label: `Expenses (${expenses.length})`, icon: Wallet },
             { id: 'settings', label: 'Store, Social & Contact', icon: Settings },
           ].map(({ id, label, icon: Icon }) => {
             const active = tab === id;
@@ -1257,6 +1310,164 @@ export default function AdminDashboardPage() {
               ))}
           </div>
         )}
+
+        {tab === 'expenses' && (() => {
+          const faizanTotal = expenses.filter((x) => x.founder === 'Faizan').reduce((sum, x) => sum + Number(x.amount || 0), 0);
+          const mujassamTotal = expenses.filter((x) => x.founder === 'Mujassam').reduce((sum, x) => sum + Number(x.amount || 0), 0);
+          const sharedTotal = expenses.filter((x) => x.founder === 'Shared').reduce((sum, x) => sum + Number(x.amount || 0), 0);
+          const grandTotal = faizanTotal + mujassamTotal + sharedTotal;
+          const filteredExpenses = expenses.filter((item) => {
+            const matchFounder = founderFilter === 'ALL' || item.founder === founderFilter;
+            const matchDate = !dateFilter || item.date === dateFilter;
+            return matchFounder && matchDate;
+          });
+
+          return (
+            <div style={{ display: 'grid', gap: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 16 }}>
+                {[
+                  { label: 'Total Brand Expenditure', value: `₹${grandTotal.toLocaleString('en-IN')}`, sub: `${expenses.length} recorded entries`, accent: '#2C141F' },
+                  { label: 'Faizan Expenditure', value: `₹${faizanTotal.toLocaleString('en-IN')}`, sub: 'Paid by Faizan', accent: '#1B4965' },
+                  { label: 'Mujassam Expenditure', value: `₹${mujassamTotal.toLocaleString('en-IN')}`, sub: 'Paid by Mujassam', accent: '#1E6F50' },
+                  { label: 'Shared (Faizan & Mujassam)', value: `₹${sharedTotal.toLocaleString('en-IN')}`, sub: 'Joint / Split spend', accent: '#9E7B43' },
+                ].map((c) => (
+                  <div key={c.label} style={{ background: '#fff', padding: 20, borderRadius: 14, border: '1px solid var(--border-sand)', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: c.accent }} />
+                    <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)' }}>{c.label}</div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--brand-plum)', marginTop: 6 }}>{c.value}</div>
+                    <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: 4 }}>{c.sub}</div>
+                  </div>
+                ))}
+              </div>
+
+              <form onSubmit={handleAddExpense} style={{ background: '#fff', padding: 24, borderRadius: 16, border: '1.5px solid var(--brand-gold)', display: 'grid', gap: 14 }}>
+                <div>
+                  <div style={{ fontSize: '0.7rem', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--brand-gold-dark)', fontWeight: 700 }}>
+                    DATE-WISE FOUNDER EXPENSE LEDGER
+                  </div>
+                  <h2 style={{ fontSize: '1.6rem', color: 'var(--brand-plum)', margin: '2px 0 0' }}>
+                    Log Expenditure — Faizan &amp; Mujassam
+                  </h2>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12 }}>
+                  <div>
+                    <label style={lbl}>Date *</label>
+                    <input type="date" required value={expenseForm.date} onChange={(e) => setExpenseForm({ ...expenseForm, date: e.target.value })} style={inp} />
+                  </div>
+                  <div>
+                    <label style={lbl}>Spent By *</label>
+                    <select value={expenseForm.founder} onChange={(e) => setExpenseForm({ ...expenseForm, founder: e.target.value })} style={inp}>
+                      <option value="Faizan">Faizan</option>
+                      <option value="Mujassam">Mujassam</option>
+                      <option value="Shared">Shared (Faizan &amp; Mujassam)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={lbl}>Category</label>
+                    <select value={expenseForm.category} onChange={(e) => setExpenseForm({ ...expenseForm, category: e.target.value })} style={inp}>
+                      <option value="Fabric & Sourcing">Fabric &amp; Sourcing</option>
+                      <option value="Packaging & Labels">Packaging &amp; Labels</option>
+                      <option value="Shipping & Courier">Shipping &amp; Courier</option>
+                      <option value="Ads & Marketing">Ads &amp; Marketing</option>
+                      <option value="Domain & Hosting">Domain &amp; Hosting</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={lbl}>Amount (₹) *</label>
+                    <input type="number" min="1" step="0.01" required placeholder="e.g. 2500" value={expenseForm.amount} onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })} style={inp} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+                  <div>
+                    <label style={lbl}>Expense Item / Purpose *</label>
+                    <input required placeholder="e.g. Modal Jersey rolls / Custom pouches / Meta ad spend" value={expenseForm.title} onChange={(e) => setExpenseForm({ ...expenseForm, title: e.target.value })} style={inp} />
+                  </div>
+                  <div>
+                    <label style={lbl}>Notes (Optional)</label>
+                    <input placeholder="UPI ref, vendor name, or remark..." value={expenseForm.notes} onChange={(e) => setExpenseForm({ ...expenseForm, notes: e.target.value })} style={inp} />
+                  </div>
+                </div>
+
+                <div>
+                  <button type="submit" className="btn-primary" style={{ padding: '11px 24px' }}>
+                    + Record Date-Wise Expense
+                  </button>
+                </div>
+              </form>
+
+              <div style={{ background: '#fff', padding: 22, borderRadius: 16, border: '1px solid var(--border-sand)', display: 'grid', gap: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                  <h3 style={{ margin: 0, color: 'var(--brand-plum)', fontSize: '1.25rem' }}>
+                    Date-Wise Expenditure History ({filteredExpenses.length})
+                  </h3>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                    {['ALL', 'Faizan', 'Mujassam', 'Shared'].map((f) => (
+                      <button
+                        key={f}
+                        type="button"
+                        onClick={() => setFounderFilter(f)}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: 8,
+                          border: '1px solid var(--brand-gold)',
+                          background: founderFilter === f ? 'var(--brand-plum)' : '#fff',
+                          color: founderFilter === f ? '#FAF6EE' : 'var(--brand-plum)',
+                          fontWeight: 700,
+                          fontSize: '0.78rem',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {f}
+                      </button>
+                    ))}
+                    <input
+                      type="date"
+                      value={dateFilter}
+                      onChange={(e) => setDateFilter(e.target.value)}
+                      style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border-sand)', fontSize: '0.8rem' }}
+                    />
+                    {dateFilter && (
+                      <button type="button" onClick={() => setDateFilter('')} style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border-sand)', background: 'var(--bg-cream)', fontSize: '0.76rem', cursor: 'pointer' }}>
+                        Clear Date
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {filteredExpenses.length === 0 ? (
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', padding: '12px 0' }}>
+                    No expense entries recorded yet. Add your first date-wise entry above.
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gap: 10 }}>
+                    {filteredExpenses.map((ex) => (
+                      <div key={ex.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, padding: '12px 16px', borderRadius: 12, background: 'var(--bg-cream)', border: '1px solid var(--border-sand)' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--brand-gold-dark)' }}>{ex.date}</span>
+                            <span style={{ fontWeight: 800, fontSize: '0.72rem', padding: '2px 9px', borderRadius: 999, background: '#2C141F', color: '#FAF6EE' }}>{ex.founder}</span>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>{ex.category}</span>
+                          </div>
+                          <div style={{ fontWeight: 700, color: 'var(--brand-plum)', fontSize: '0.98rem', marginTop: 4 }}>{ex.title}</div>
+                          {ex.notes && <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 2 }}>{ex.notes}</div>}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <span style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--brand-plum)' }}>₹{Number(ex.amount).toLocaleString('en-IN')}</span>
+                          <button type="button" onClick={() => handleDeleteExpense(ex.id)} style={{ background: '#FDECEA', color: '#9E2A2B', border: 'none', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', fontSize: '0.76rem', fontWeight: 700 }}>
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {tab === 'settings' && settings && (
           <form onSubmit={saveSettings} style={{ maxWidth: 640, background: '#fff', padding: 28, borderRadius: 16, border: '1px solid var(--brand-gold)', display: 'grid', gap: 14 }}>
