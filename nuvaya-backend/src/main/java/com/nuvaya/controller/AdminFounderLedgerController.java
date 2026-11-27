@@ -30,23 +30,33 @@ public class AdminFounderLedgerController {
 
     @PostMapping
     public ResponseEntity<FounderLedgerEntry> create(@RequestBody Map<String, Object> body) {
-        String rawType = body.get("entryType") != null ? InputSanitizer.sanitizeBounded(String.valueOf(body.get("entryType")), 24).toUpperCase(Locale.ROOT) : "EXPENSE";
+        String rawType = body.get("entryType") != null
+                ? InputSanitizer.sanitizeBounded(String.valueOf(body.get("entryType")), 24).toUpperCase(Locale.ROOT)
+                : "EXPENSE";
         if (!"INVESTMENT".equals(rawType) && !"EXPENSE".equals(rawType)) {
             throw new BusinessValidationException("Entry type must be INVESTMENT or EXPENSE");
         }
 
-        String founder = body.get("founderName") != null ? InputSanitizer.sanitizeBounded(String.valueOf(body.get("founderName")), 40) : "";
+        String founder = body.get("founderName") != null
+                ? InputSanitizer.sanitizeBounded(String.valueOf(body.get("founderName")), 40)
+                : "";
         if (founder.isEmpty()) {
             throw new BusinessValidationException("Founder name is required");
         }
 
-        String title = body.get("title") != null ? InputSanitizer.sanitizeBounded(String.valueOf(body.get("title")), 200) : "";
+        String title = body.get("title") != null
+                ? InputSanitizer.sanitizeBounded(String.valueOf(body.get("title")), 200)
+                : "";
         if (title.isEmpty()) {
             throw new BusinessValidationException("Title / description is required");
         }
 
-        String category = body.get("category") != null ? InputSanitizer.sanitizeBounded(String.valueOf(body.get("category")), 80) : "General";
-        String notes = body.get("notes") != null ? InputSanitizer.sanitizeBounded(String.valueOf(body.get("notes")), 500) : "";
+        String category = body.get("category") != null
+                ? InputSanitizer.sanitizeBounded(String.valueOf(body.get("category")), 80)
+                : "General";
+        String notes = body.get("notes") != null
+                ? InputSanitizer.sanitizeBounded(String.valueOf(body.get("notes")), 500)
+                : "";
 
         LocalDate entryDate;
         try {
@@ -82,7 +92,7 @@ public class AdminFounderLedgerController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity> delete(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> delete(@PathVariable Long id) {
         FounderLedgerEntry existing = ledgerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Ledger entry not found"));
         ledgerRepository.delete(existing);
