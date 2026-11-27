@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -22,6 +23,12 @@ public class ProductReviewController {
 
     private final ProductReviewService reviewService;
     private final ImageStorageService storageService;
+
+    @GetMapping("/reviews/featured")
+    public ResponseEntity<List<ReviewSummaryResponse.ReviewItemDto>> getFeaturedReviews(
+            @RequestParam(defaultValue = "10") int limit) {
+        return ResponseEntity.ok(reviewService.getFeaturedPublicReviews(limit));
+    }
 
     @GetMapping("/products/{productId}/reviews")
     public ResponseEntity<ReviewSummaryResponse> getProductReviews(

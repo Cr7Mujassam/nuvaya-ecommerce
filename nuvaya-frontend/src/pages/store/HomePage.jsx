@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, ShieldCheck, MessageCircle, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Sparkles, ShieldCheck, MessageCircle, ArrowRight, ChevronLeft, ChevronRight, Star, BadgeCheck, Quote } from 'lucide-react';
 import axiosClient, { FALLBACK_IMAGE, resolveAssetUrl } from '../../api/axiosClient';
 import ProductCard from '../../components/common/ProductCard';
 import { useCart } from '../../context/CartContext';
@@ -32,6 +32,9 @@ export default function HomePage() {
   const [featured, setFeatured] = useState([]);
   const [bestsellers, setBestsellers] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [approvedReviews, setApprovedReviews] = useState([]);
+  const [reviewSlideIdx, setReviewSlideIdx] = useState(0);
+  const [reviewPaused, setReviewPaused] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -52,7 +55,16 @@ export default function HomePage() {
     });
     axiosClient.get('/products/bestsellers').then((r) => setBestsellers(r.data)).catch(() => {});
     axiosClient.get('/categories').then((r) => setCategories(r.data)).catch(() => {});
+    axiosClient.get('/reviews/featured?limit=10').then((r) => setApprovedReviews(Array.isArray(r.data) ? r.data : [])).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (approvedReviews.length <= 1 || reviewPaused) return;
+    const timer = setInterval(() => {
+      setReviewSlideIdx((prev) => (prev + 1) % approvedReviews.length);
+    }, 4200);
+    return () => clearInterval(timer);
+  }, [approvedReviews.length, reviewPaused]);
 
   const heroProductImg =
     featured.find((p) => p.images?.length > 0)?.images?.[0]?.imageUrl || FALLBACK_IMAGE;
@@ -475,6 +487,172 @@ export default function HomePage() {
           {featured.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>
       </section>
+
+      {/* Rotating Customer Impressions Banner */}
+      {approvedReviews.length > 0 && (() => {
+        const activeRev = approvedReviews[reviewSlideIdx % approvedReviews.length];
+        const stars = Math.max(1, Math.min(5, Number(activeRev.rating || 5)));
+        return (
+          <section
+            onMouseEnter={() => setReviewPaused(true)}
+            onMouseLeave={() => setReviewPaused(false)}
+            style={{ maxWidth: 1240, margin: '0 auto 64px', padding: '0 20px' }}
+          >
+            <div style={{
+              background: 'linear-gradient(135deg, #27101B 0%, #3B1829 55%, #231019 100%)',
+              border: '1.5px solid var(--brand-gold)',
+              borderRadius: 22,
+              padding: '32px 30px',
+              color: '#FAF6EE',
+              boxShadow: '0 20px 44px -16px rgba(39,16,27,0.35)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 18 }}>
+                <div>
+                  <div style={{ fontSize: '0.68rem', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--brand-gold)', fontWeight: 800 }}>
+                    VERIFIED CLIENT IMPRESSIONS
+                  </div>
+                  <h2 style={{ fontSize: 'clamp(1.5rem, 2.8vw, 2.1rem)', margin: '4px 0 0', color: '#FAF6EE' }}>
+                    Loved by Women Across India
+                  </h2>
+                </div>
+
+                {approvedReviews.length > 1 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button
+                      type="button"
+                      aria-label="Previous Review"
+                      onClick={() => setReviewSlideIdx((prev) => (prev - 1 + approvedReviews.length) % approvedReviews.length)}
+                      style={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid var(--brand-gold)', background: 'rgba(255,255,255,0.08)', color: '#FAF6EE', display: 'grid', placeItems: 'center', cursor: 'pointer' }}
+                    >
+                      <ChevronLeft size={17} />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Next Review"
+                      onClick={() => setReviewSlideIdx((prev) => (prev + 1) % approvedReviews.length)}
+                      style={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid var(--brand-gold)', background: 'rgba(255,255,255,0.08)', color: '#FAF6EE', display: 'grid', placeItems: 'center', cursor: 'pointer' }}
+                    >
+                      <ChevronRight size={17} />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(198,161,99,0.4)',
+                borderRadius: 16,
+                padding: '24px 26px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 20,
+                transition: 'all 0.35s ease'
+              }}>
+                <div style={{ flex: '1 1 320px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+                    <div style={{ display: 'inline-flex', gap: 3 }}>
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <Star key={n} size={16} fill={n <= stars ? '#C6A163' : 'transparent'} color="#C6A163" />
+                      ))}
+                    </div>
+                    {activeRev.verifiedPurchase && (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        background: 'rgba(74, 222, 128, 0.16)',
+                        border: '1px solid rgba(74, 222, 128, 0.45)',
+                        color: '#86EFAC',
+                        padding: '2px 10px',
+                        borderRadius: 999,
+                        fontSize: '0.7rem',
+                        fontWeight: 700
+                      }}>
+                        <BadgeCheck size={13} /> Verified Buyer
+                      </span>
+                    )}
+                  </div>
+
+                  <p style={{ fontSize: 'clamp(1rem, 1.8vw, 1.2rem)', lineHeight: 1.65, color: '#FAF6EE', fontStyle: 'italic', margin: '0 0 14px' }}>
+                    <Quote size={16} style={{ color: 'var(--brand-gold)', marginRight: 6, verticalAlign: 'text-top' }} />
+                    {activeRev.comment}
+                  </p>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                    <div>
+                      <strong style={{ color: 'var(--brand-gold)', fontSize: '0.95rem' }}>{activeRev.customerName}</strong>
+                      {activeRev.productName && (
+                        <span style={{ color: '#DFD1BE', fontSize: '0.82rem', marginLeft: 8 }}>
+                          • Purchased {activeRev.productName}
+                        </span>
+                      )}
+                    </div>
+
+                    {activeRev.productId && (
+                      <Link
+                        to={`/product/${activeRev.productId}`}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '7px 14px',
+                          borderRadius: 999,
+                          background: 'var(--brand-gold)',
+                          color: '#231019',
+                          fontSize: '0.74rem',
+                          fontWeight: 800,
+                          letterSpacing: '0.08em',
+                          textTransform: 'uppercase'
+                        }}
+                      >
+                        Shop This Piece <ArrowRight size={13} />
+                      </Link>
+                    )}
+                  </div>
+                </div>
+
+                {activeRev.imageUrl && (
+                  <img
+                    src={resolveAssetUrl(activeRev.imageUrl)}
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    alt={activeRev.customerName}
+                    style={{ width: 96, height: 118, objectFit: 'cover', borderRadius: 12, border: '1.5px solid var(--brand-gold)', flexShrink: 0 }}
+                  />
+                )}
+              </div>
+
+              {approvedReviews.length > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 7, marginTop: 16 }}>
+                  {approvedReviews.map((rv, idx) => {
+                    const active = idx === (reviewSlideIdx % approvedReviews.length);
+                    return (
+                      <button
+                        key={rv.id || idx}
+                        type="button"
+                        aria-label={`Review ${idx + 1}`}
+                        onClick={() => setReviewSlideIdx(idx)}
+                        style={{
+                          width: active ? 22 : 8,
+                          height: 8,
+                          borderRadius: 999,
+                          border: 'none',
+                          background: active ? 'var(--brand-gold)' : 'rgba(255,255,255,0.35)',
+                          cursor: 'pointer',
+                          transition: 'all 0.25s ease'
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* Editorial Atelier Banner */}
       <section style={{

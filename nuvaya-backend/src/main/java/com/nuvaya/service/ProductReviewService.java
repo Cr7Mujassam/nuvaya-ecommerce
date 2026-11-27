@@ -111,6 +111,17 @@ public class ProductReviewService {
     }
 
     @Transactional(readOnly = true)
+    public List<ReviewSummaryResponse.ReviewItemDto> getFeaturedPublicReviews(int limit) {
+        int safeLimit = Math.min(Math.max(limit, 1), 20);
+        return reviewRepository
+                .findByStatusOrderByCreatedAtDesc(ReviewStatus.APPROVED, PageRequest.of(0, safeLimit))
+                .getContent()
+                .stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public Page<ReviewSummaryResponse.ReviewItemDto> getAdminReviews(String status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<ProductReview> results = (status != null && !status.isBlank() && !status.equalsIgnoreCase("ALL"))
