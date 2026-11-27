@@ -429,65 +429,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* High-Converting Bundle & Offer Strip */}
-      <section style={{ maxWidth: 1240, margin: '20px auto 44px', padding: '0 20px' }}>
-        <div style={{
-          background: 'linear-gradient(135deg, #27101B 0%, #3E192B 100%)',
-          border: '1.5px solid var(--brand-gold)',
-          borderRadius: 18,
-          padding: '22px 26px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 16,
-          color: '#FAF6EE'
-        }}>
-          <div>
-            <div style={{ fontSize: '0.7rem', letterSpacing: '0.18em', color: 'var(--brand-gold)', fontWeight: 800, textTransform: 'uppercase' }}>
-              MOST POPULAR WITH REPEAT BUYERS
-            </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, marginTop: 3 }}>
-              Unlock Free Pan-India Delivery on Orders ₹499+ &amp; Save More on Pack of 3 / Pack of 5 Combos
-            </div>
-          </div>
-          <Link
-            to="/shop"
-            style={{
-              padding: '11px 22px',
-              borderRadius: 999,
-              background: 'var(--brand-gold)',
-              color: '#231019',
-              fontWeight: 800,
-              fontSize: '0.76rem',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            Build Your Combo →
-          </Link>
-        </div>
-      </section>
-
-      {/* Featured & New Arrivals */}
-      <section id="featured-catalog" style={{ maxWidth: 1240, margin: '36px auto 76px', padding: '0 20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 30, flexWrap: 'wrap', gap: 12 }}>
-          <div>
-            <div style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--brand-gold-dark)', fontWeight: 700 }}>
-              SEASONAL EDIT
-            </div>
-            <h2 style={{ fontSize: '2.45rem', color: 'var(--brand-plum)', lineHeight: 1.1 }}>Featured &amp; New Arrivals</h2>
-          </div>
-          <Link to="/shop" style={{ color: 'var(--brand-plum)', fontWeight: 700, fontSize: '0.8rem', letterSpacing: '0.14em', textTransform: 'uppercase', borderBottom: '1.5px solid var(--brand-gold)', paddingBottom: 3 }}>
-            View Entire Catalog →
-          </Link>
-        </div>
-        <div className="product-grid">
-          {featured.map((p) => <ProductCard key={p.id} product={p} />)}
-        </div>
-      </section>
-
       {/* Rotating Customer Impressions Banner */}
       {approvedReviews.length > 0 && (() => {
         const activeRev = approvedReviews[reviewSlideIdx % approvedReviews.length];
@@ -496,7 +437,7 @@ export default function HomePage() {
           <section
             onMouseEnter={() => setReviewPaused(true)}
             onMouseLeave={() => setReviewPaused(false)}
-            style={{ maxWidth: 1240, margin: '0 auto 64px', padding: '0 20px' }}
+            style={{ maxWidth: 1240, margin: '12px auto 28px', padding: '0 20px' }}
           >
             <div style={{
               background: 'linear-gradient(135deg, #27101B 0%, #3B1829 55%, #231019 100%)',
@@ -653,6 +594,65 @@ export default function HomePage() {
           </section>
         );
       })()}
+
+      {/* High-Converting Bundle & Offer Strip */}
+      <section style={{ maxWidth: 1240, margin: '20px auto 44px', padding: '0 20px' }}>
+        <div style={{
+          background: 'linear-gradient(135deg, #27101B 0%, #3E192B 100%)',
+          border: '1.5px solid var(--brand-gold)',
+          borderRadius: 18,
+          padding: '22px 26px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          color: '#FAF6EE'
+        }}>
+          <div>
+            <div style={{ fontSize: '0.7rem', letterSpacing: '0.18em', color: 'var(--brand-gold)', fontWeight: 800, textTransform: 'uppercase' }}>
+              MOST POPULAR WITH REPEAT BUYERS
+            </div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, marginTop: 3 }}>
+              Unlock Free Pan-India Delivery on Orders ₹499+ &amp; Save More on Pack of 3 / Pack of 5 Combos
+            </div>
+          </div>
+          <Link
+            to="/shop"
+            style={{
+              padding: '11px 22px',
+              borderRadius: 999,
+              background: 'var(--brand-gold)',
+              color: '#231019',
+              fontWeight: 800,
+              fontSize: '0.76rem',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            Build Your Combo →
+          </Link>
+        </div>
+      </section>
+
+      {/* Featured & New Arrivals */}
+      <section id="featured-catalog" style={{ maxWidth: 1240, margin: '36px auto 76px', padding: '0 20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 30, flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <div style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--brand-gold-dark)', fontWeight: 700 }}>
+              SEASONAL EDIT
+            </div>
+            <h2 style={{ fontSize: '2.45rem', color: 'var(--brand-plum)', lineHeight: 1.1 }}>Featured &amp; New Arrivals</h2>
+          </div>
+          <Link to="/shop" style={{ color: 'var(--brand-plum)', fontWeight: 700, fontSize: '0.8rem', letterSpacing: '0.14em', textTransform: 'uppercase', borderBottom: '1.5px solid var(--brand-gold)', paddingBottom: 3 }}>
+            View Entire Catalog →
+          </Link>
+        </div>
+        <div className="product-grid">
+          {featured.map((p) => <ProductCard key={p.id} product={p} />)}
+        </div>
+      </section>
 
       {/* Editorial Atelier Banner */}
       <section style={{
