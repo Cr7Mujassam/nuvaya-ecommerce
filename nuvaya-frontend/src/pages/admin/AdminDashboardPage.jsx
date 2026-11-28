@@ -41,6 +41,33 @@ export default function AdminDashboardPage() {
   const [orders, setOrders] = useState([]);
   const [orderSearch, setOrderSearch] = useState('');
   const [orderStatusFilter, setOrderStatusFilter] = useState('ALL');
+
+  const getOrderItemImage = (it) => {
+    if (it.imageUrl) return it.imageUrl;
+    const prod = (products || []).find((pr) =>
+      (it.productId && String(pr.id) === String(it.productId)) ||
+      (it.sku && pr.sku && String(pr.sku).trim().toLowerCase() === String(it.sku).trim().toLowerCase())
+    );
+    if (!prod) return "";
+    const colorName = String(it.selectedColor || "").trim().toLowerCase();
+    if (colorName && Array.isArray(prod.colors)) {
+      const matchedColor = prod.colors.find((c) =>
+        String(c.name || c.colorName || "").trim().toLowerCase() === colorName
+      );
+      if (matchedColor) {
+        const cImg = matchedColor.imageUrl || matchedColor.image || (Array.isArray(matchedColor.imageUrls) && matchedColor.imageUrls[0]);
+        if (cImg) return cImg;
+      }
+    }
+    if (prod.mainImage) return prod.mainImage;
+    if (Array.isArray(prod.imageUrls) && prod.imageUrls.length > 0) return prod.imageUrls[0];
+    if (Array.isArray(prod.images) && prod.images.length > 0) {
+      const first = prod.images[0];
+      return typeof first === "string" ? first : (first.url || first.imageUrl || "");
+    }
+    return "";
+  };
+
   const [reviews, setReviews] = useState([]);
   const [reviewFilter, setReviewFilter] = useState('ALL');
   const [replyDrafts, setReplyDrafts] = useState({});
@@ -1182,13 +1209,29 @@ export default function AdminDashboardPage() {
                     <div style={{ fontSize: '0.86rem', marginTop: 10, color: 'var(--brand-plum)', display: 'grid', gap: 5 }}>
                       {(o.items || []).map((it, idx) => {
                         const skuText = it.sku || `PRD-${it.productId}`;
+                        const itemImg = getOrderItemImage(it);
                         const isMatch = q && (
                           String(it.sku || '').toLowerCase().includes(q) ||
                           String(it.productName || '').toLowerCase().includes(q) ||
                           String(it.selectedColor || '').toLowerCase().includes(q)
                         );
                         return (
-                          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: isMatch ? '4px 8px' : '1px 0', borderRadius: 6, background: isMatch ? '#FFF8E7' : 'transparent', border: isMatch ? '1px solid var(--brand-gold)' : 'none' }}>
+                          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', padding: isMatch ? '6px 10px' : '2px 0', borderRadius: 8, background: isMatch ? '#FFF8E7' : 'transparent', border: isMatch ? '1px solid var(--brand-gold)' : 'none' }}>
+                            {itemImg && (
+                              <img
+                                src={itemImg}
+                                alt={`${skuText} - ${it.productName}`}
+                                style={{
+                                  width: isMatch ? 54 : 36,
+                                  height: isMatch ? 54 : 36,
+                                  objectFit: 'cover',
+                                  borderRadius: 7,
+                                  border: isMatch ? '2px solid var(--brand-gold)' : '1px solid var(--border-sand)',
+                                  flexShrink: 0,
+                                  background: '#FAF6F0'
+                                }}
+                              />
+                            )}
                             <span style={{ fontFamily: 'monospace', fontSize: '0.76rem', fontWeight: 700, padding: '2px 7px', borderRadius: 5, background: '#F4EFEA', color: 'var(--brand-plum)', border: '1px solid var(--border-sand)' }}>
                               SKU: {skuText}
                             </span>
