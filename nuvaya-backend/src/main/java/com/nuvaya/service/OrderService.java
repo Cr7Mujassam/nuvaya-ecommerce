@@ -127,7 +127,7 @@ public class OrderService {
                     ? String.join(", ", itemReq.getMixedColors()) : null;
 
             order.getItems().add(OrderItem.builder()
-                    .order(order).productId(product.getId()).productName(product.getName())
+                    .order(order).productId(product.getId()).sku(product.getSku()).productName(product.getName())
                     .selectedColor(itemReq.getSelectedColor()).mixedColorsSummary(mixed)
                     .selectedSize(itemReq.getSelectedSize()).packName(packName)
                     .pieceCount(pieceCount).quantity(qty).unitPrice(effPrice).lineTotal(lineEff).build());

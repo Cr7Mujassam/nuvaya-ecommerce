@@ -13,6 +13,8 @@ public class OrderItem {
     private Order order;
     @Column(nullable = false)
     private Long productId;
+    @Column(length = 80)
+    private String sku;
     @Column(nullable = false, length = 180)
     private String productName;
     @Column(length = 60)

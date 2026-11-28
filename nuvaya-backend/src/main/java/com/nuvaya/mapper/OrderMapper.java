@@ -3,11 +3,20 @@ package com.nuvaya.mapper;
 import com.nuvaya.dto.response.OrderResponse;
 import com.nuvaya.dto.response.OrderTrackingResponse;
 import com.nuvaya.entity.Order;
+import com.nuvaya.entity.OrderItem;
+import com.nuvaya.entity.Product;
+import com.nuvaya.repository.ProductRepository;
 import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component
 public class OrderMapper {
+
+    private final ProductRepository productRepository;
+
+    public OrderMapper(ProductRepository productRepository) {
+        this.productRepository = productRepository;
+    }
     public OrderResponse toResponse(Order o) {
         return OrderResponse.builder()
                 .id(o.getId())
@@ -54,9 +63,21 @@ public class OrderMapper {
                 .build();
     }
 
+    private String resolveSku(OrderItem i) {
+        if (i.getSku() != null && !i.getSku().isBlank()) {
+            return i.getSku().trim();
+        }
+        if (i.getProductId() == null) return "";
+        return productRepository.findById(i.getProductId())
+                .map(Product::getSku)
+                .filter(s -> s != null && !s.isBlank())
+                .map(String::trim)
+                .orElse("");
+    }
+
     private List<OrderResponse.OrderItemView> mapItems(Order o) {
         return o.getItems().stream().map(i -> OrderResponse.OrderItemView.builder()
-                .productId(i.getProductId()).productName(i.getProductName())
+                .productId(i.getProductId()).sku(resolveSku(i)).productName(i.getProductName())
                 .selectedColor(i.getSelectedColor()).mixedColorsSummary(i.getMixedColorsSummary())
                 .selectedSize(i.getSelectedSize()).packName(i.getPackName())
                 .pieceCount(i.getPieceCount()).quantity(i.getQuantity())

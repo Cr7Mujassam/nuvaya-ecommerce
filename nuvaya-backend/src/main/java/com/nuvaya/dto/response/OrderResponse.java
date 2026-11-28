@@ -38,6 +38,7 @@ public class OrderResponse {
     @Data @Builder
     public static class OrderItemView {
         private Long productId;
+        private String sku;
         private String productName;
         private String selectedColor;
         private String mixedColorsSummary;

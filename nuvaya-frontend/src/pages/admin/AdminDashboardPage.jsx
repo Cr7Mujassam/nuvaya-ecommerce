@@ -39,6 +39,8 @@ export default function AdminDashboardPage() {
   const [newCatForm, setNewCatForm] = useState({ name: '', parentCategoryId: '', description: '' });
   const [savingCat, setSavingCat] = useState(false);
   const [orders, setOrders] = useState([]);
+  const [orderSearch, setOrderSearch] = useState('');
+  const [orderStatusFilter, setOrderStatusFilter] = useState('ALL');
   const [reviews, setReviews] = useState([]);
   const [reviewFilter, setReviewFilter] = useState('ALL');
   const [replyDrafts, setReplyDrafts] = useState({});
@@ -1123,29 +1125,81 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {tab === 'orders' && (
-          <div style={{ display: 'grid', gap: 14 }}>
-            <h2 style={{ fontSize: '1.8rem', color: 'var(--brand-plum)', marginBottom: 6 }}>WhatsApp Customer Orders</h2>
-            {orders.length === 0 ? (
-              <div style={{ background: '#fff', padding: 32, borderRadius: 14, border: '1px solid var(--border-sand)', color: 'var(--text-muted)' }}>
-                No orders yet. Once customers submit checkout to WhatsApp, their order reference and items appear here.
-              </div>
-            ) : orders.map((o) => (
-              <div key={o.id} style={{ background: '#fff', padding: 20, borderRadius: 14, border: '1px solid var(--border-sand)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <strong style={{ color: 'var(--brand-plum)', fontSize: '1.05rem' }}>{o.orderReference}</strong>
-                    <span style={statusPill(o.status)}>{o.status}</span>
-                    {o.paymentMethod && <span style={{ fontSize: '0.68rem', fontWeight: 800, padding: '3px 9px', borderRadius: 999, background: o.paymentStatus === 'PAID' ? '#E6F4EA' : '#FFF4E5', color: o.paymentStatus === 'PAID' ? '#1E6F50' : '#9A5B13' }}>{o.paymentMethod} • {o.paymentStatus || 'PENDING'}</span>}
-                  </div>
-                  <div style={{ fontWeight: 600, marginTop: 4 }}>{o.customerName} • <a href={`https://wa.me/91${String(o.customerMobile || "").replace(/\D/g, "").slice(-10)}?text=${encodeURIComponent(`Assalamu Alaikum ${o.customerName}, your NUVAYA order *${o.orderReference}* status is *${o.status}*.${o.trackingId ? ` Tracking AWB: ${o.trackingId}` : ""} Track live: https://nuvaya.co.in/track-order?ref=${o.orderReference}`)}`} target="_blank" rel="noreferrer" style={{ color: "#1E6F50", fontWeight: 600, textDecoration: "underline" }} title="Send Free WhatsApp Status Update">{o.customerMobile} (WhatsApp)</a>{o.customerEmail ? ` • ${o.customerEmail}` : ''}</div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{o.deliveryAddress}, {o.city}, {o.state} - {o.pinCode}</div>
-                  <div style={{ fontSize: '0.86rem', marginTop: 8, color: 'var(--brand-plum)' }}>
-                    {o.items.map((it, idx) => (
-                      <div key={idx}>• {it.productName} [{it.packName}] {it.selectedColor ? `(${it.selectedColor})` : ''} × {it.quantity}</div>
+        {tab === 'orders' && (() => {
+          const q = orderSearch.trim().toLowerCase();
+          const filteredOrders = orders.filter((o) => {
+            if (orderStatusFilter !== 'ALL' && o.status !== orderStatusFilter) return false;
+            if (!q) return true;
+            const refMatch = String(o.orderReference || '').toLowerCase().includes(q);
+            const custMatch = String(o.customerName || '').toLowerCase().includes(q) || String(o.customerMobile || '').toLowerCase().includes(q);
+            const itemMatch = (o.items || []).some((it) =>
+              String(it.sku || '').toLowerCase().includes(q) ||
+              String(it.productName || '').toLowerCase().includes(q) ||
+              String(it.selectedColor || '').toLowerCase().includes(q)
+            );
+            return refMatch || custMatch || itemMatch;
+          });
+
+          return (
+            <div style={{ display: 'grid', gap: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                <h2 style={{ fontSize: '1.8rem', color: 'var(--brand-plum)', margin: 0 }}>Customer Orders & Packing Desk</h2>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    value={orderSearch}
+                    onChange={(e) => setOrderSearch(e.target.value)}
+                    placeholder="Search SKU, item, order ID, or customer..."
+                    style={{ padding: '9px 14px', borderRadius: 10, border: '1px solid var(--border-sand)', background: '#fff', minWidth: 270, fontSize: '0.88rem' }}
+                  />
+                  <select
+                    value={orderStatusFilter}
+                    onChange={(e) => setOrderStatusFilter(e.target.value)}
+                    style={{ padding: '9px 12px', borderRadius: 10, border: '1px solid var(--border-sand)', background: '#fff', fontWeight: 600, fontSize: '0.86rem' }}
+                  >
+                    {['ALL', 'PENDING', 'CONFIRMED', 'PACKED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map((st) => (
+                      <option key={st} value={st}>{st === 'ALL' ? 'All Statuses' : st}</option>
                     ))}
-                  </div>
+                  </select>
                 </div>
+              </div>
+              {filteredOrders.length === 0 ? (
+                <div style={{ background: '#fff', padding: 32, borderRadius: 14, border: '1px solid var(--border-sand)', color: 'var(--text-muted)' }}>
+                  {orders.length === 0
+                    ? 'No orders yet. Once customers submit checkout to WhatsApp, their order reference and items appear here.'
+                    : `No orders match "${orderSearch}".`}
+                </div>
+              ) : filteredOrders.map((o) => (
+                <div key={o.id} style={{ background: '#fff', padding: 20, borderRadius: 14, border: '1px solid var(--border-sand)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                      <strong style={{ color: 'var(--brand-plum)', fontSize: '1.05rem' }}>{o.orderReference}</strong>
+                      <span style={statusPill(o.status)}>{o.status}</span>
+                      {o.paymentMethod && <span style={{ fontSize: '0.68rem', fontWeight: 800, padding: '3px 9px', borderRadius: 999, background: o.paymentStatus === 'PAID' ? '#E6F4EA' : '#FFF4E5', color: o.paymentStatus === 'PAID' ? '#1E6F50' : '#9A5B13' }}>{o.paymentMethod} • {o.paymentStatus || 'PENDING'}</span>}
+                    </div>
+                    <div style={{ fontWeight: 600, marginTop: 4 }}>{o.customerName} • <a href={`https://wa.me/91${String(o.customerMobile || "").replace(/\D/g, "").slice(-10)}?text=${encodeURIComponent(`Assalamu Alaikum ${o.customerName}, your NUVAYA order *${o.orderReference}* status is *${o.status}*.${o.trackingId ? ` Tracking AWB: ${o.trackingId}` : ""} Track live: https://nuvaya.co.in/track-order?ref=${o.orderReference}`)}`} target="_blank" rel="noreferrer" style={{ color: "#1E6F50", fontWeight: 600, textDecoration: "underline" }} title="Send Free WhatsApp Status Update">{o.customerMobile} (WhatsApp)</a>{o.customerEmail ? ` • ${o.customerEmail}` : ''}</div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{o.deliveryAddress}, {o.city}, {o.state} - {o.pinCode}</div>
+                    <div style={{ fontSize: '0.86rem', marginTop: 10, color: 'var(--brand-plum)', display: 'grid', gap: 5 }}>
+                      {(o.items || []).map((it, idx) => {
+                        const skuText = it.sku || `PRD-${it.productId}`;
+                        const isMatch = q && (
+                          String(it.sku || '').toLowerCase().includes(q) ||
+                          String(it.productName || '').toLowerCase().includes(q) ||
+                          String(it.selectedColor || '').toLowerCase().includes(q)
+                        );
+                        return (
+                          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: isMatch ? '4px 8px' : '1px 0', borderRadius: 6, background: isMatch ? '#FFF8E7' : 'transparent', border: isMatch ? '1px solid var(--brand-gold)' : 'none' }}>
+                            <span style={{ fontFamily: 'monospace', fontSize: '0.76rem', fontWeight: 700, padding: '2px 7px', borderRadius: 5, background: '#F4EFEA', color: 'var(--brand-plum)', border: '1px solid var(--border-sand)' }}>
+                              SKU: {skuText}
+                            </span>
+                            <span>
+                              <strong>{it.productName}</strong> [{it.packName}] {it.selectedColor ? `(${it.selectedColor})` : ''} × <strong>{it.quantity}</strong>
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 10, minWidth: 250 }}>
                   <div style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--brand-plum)' }}>₹{Number(o.finalAmount).toLocaleString('en-IN')}</div>
                   <select value={o.status} onChange={(e) => updateOrderStatus(o.id, e.target.value)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--brand-gold)', fontWeight: 600 }}>
@@ -1215,9 +1269,10 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          );
+        })()}
 
         {tab === 'reviews' && (
           <div style={{ display: 'grid', gap: 16 }}>
